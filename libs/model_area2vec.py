@@ -2,7 +2,7 @@ import torch.nn as nn
 import torch
 
 
-class Thing2Vec(nn.Module):
+class Area2Vec(nn.Module):
     def __init__(self, num_areas, embed_size, num_output_tokens, device = "cpu"):
         """
         Initializes the Area2Vec model.

@@ -1,13 +1,10 @@
-import sys
-sys.path.append("../libs/")
-
 import argparse
 import numpy as np
 import pandas as pd
 from tqdm.notebook import tqdm
-from train_utils import train_with_anchoring, train_without_anchoring, Dataset, FeatureQuantization
+from libs.train_utils_area2vec import train_with_anchoring, train_without_anchoring, Dataset, FeatureQuantization
 
-from model import Area2Vec
+from libs.model_area2vec import Area2Vec
 import torch
 
 def train_area2vec(input_path, batch_size, learning_rate, num_epochs, save_epoch, alpha, beta, weight_type, cuda):
