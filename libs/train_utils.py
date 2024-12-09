@@ -8,30 +8,25 @@ import torch.nn as nn
 from torch import optim
 
 class FeatureQuantization:
-    def __init__(self, label_quant_num=28, dow_quant_num=7, month_quant_num=12, date_quant_num=31, dt_quant_num=5, e_quant_num=7, touch_quant_num=2):
+    def __init__(self, label_quant_num=28, dow_quant_num=2, dt_quant_num=6, e_quant_num=4, touch_quant_num=2):
         super().__init__()
 
         self.label_quant_num = label_quant_num
         self.dow_quant_num = dow_quant_num # day_of_week
-        self.month_quant_num = month_quant_num
-        self.date_quant_num = date_quant_num
+        # self.month_quant_num = month_quant_num
+        # self.date_quant_num = date_quant_num
         self.dt_quant_num = dt_quant_num # 時間帯
-        self.e_quant_num = e_quant_num
+        self.e_quant_num = e_quant_num # 滞在時間
         self.touch_quant_num = touch_quant_num
         
-        self.quant_num = label_quant_num*dow_quant_num*month_quant_num*date_quant_num*dt_quant_num*e_quant_num*touch_quant_num
+        self.quant_num = label_quant_num*dow_quant_num*dt_quant_num*e_quant_num*touch_quant_num
 
         self.dow_dic = {"Sunday": 0, "Monday": 1, "Tuesday": 2,
                         "Wednesday": 3, "Thursday": 4, "Friday": 5, "Saturday": 6}
         self.rev_dow_dic = {v: k for k, v in self.dow_dic.items()}
         
         # upper limits of elapsed time for each token
-        if self.e_quant_num == 5:
-            self.e_thresholds = [30, 120, 360, 720]
-        if self.e_quant_num == 7:
-            self.e_thresholds = [30, 60, 120, 240, 360, 720]
-        if self.e_quant_num == 9:
-            self.e_thresholds = [15, 30, 60, 120, 180, 240, 360, 720]
+        self.e_thresholds = [20, 60, 120, 720]
 
 
     def label_quantization(self, label):
@@ -46,13 +41,13 @@ class FeatureQuantization:
         return self.e_quant_num - 1
     
     # 月日の量子化
-    def month_quantization(self, date):
-        month = int(date.split("-")[0])
-        return month
+    # def month_quantization(self, date):
+    #     month = int(date.split("-")[0])
+    #     return month
     
-    def date_quantization(self, date):
-        date = int(date.split("-")[1])
-        return date
+    # def date_quantization(self, date):
+    #     date = int(date.split("-")[1])
+    #     return date
     
     
     # 時刻の量子化
@@ -64,7 +59,8 @@ class FeatureQuantization:
             9~12時: 1, 昼前
             12~15時: 2, 昼過ぎ
             15~18時: 3, 夕方
-            18時~6時: 4, 夜
+            18時~21時: 4, 夜
+            21~6時: 5, 深夜
         ]
         '''
         hour = int(dt.split(":")[0])
@@ -76,12 +72,20 @@ class FeatureQuantization:
             return 2
         elif hour>=15 and hour<18:
             return 3
-        else:
+        elif hour>=18 and hour<21:
             return 4
+        else:
+            return 5
     
     # 曜日
     def dow_quantization(self, dow):
-        return self.dow_dic[dow]    
+        if self.dow_quant_num == 2:
+            if dow in ["Saturday", "Sunday"]:
+                return 1
+            else:
+                return 0
+        elif self.dow_quant_num == 8:
+            return self.dow_dic[dow] 
     
     
     # 触れたかどうか
@@ -93,14 +97,12 @@ class FeatureQuantization:
 
 
     # 量子化
-    def quantization(self, label, date, day_of_week, date_time, elapsed_time, is_touch):
+    def quantization(self, label, day_of_week, date_time, elapsed_time, is_touch):
         token = int(0)
         
-        token += self.label_quant_num * self.dow_quant_num * self.month_quant_num * self.date_quant_num * self.dt_quant_num * self.e_quant_num * self.touch_quantization(is_touch)
-        token += self.dow_quant_num * self.month_quant_num * self.date_quant_num * self.dt_quant_num * self.e_quant_num * self.label_quantization(label)
-        token += self.month_quant_num * self.date_quant_num * self.dt_quant_num * self.e_quant_num * self.dow_quantization(date)
-        token += self.date_quant_num * self.dt_quant_num * self.e_quant_num * self.month_quantization(date)
-        token += self.dt_quant_num * self.e_quant_num * self.date_quantization(day_of_week)
+        token += self.label_quant_num * self.dow_quant_num * self.dt_quant_num * self.e_quant_num * self.touch_quantization(is_touch)
+        token += self.dow_quant_num * self.dt_quant_num * self.e_quant_num * self.label_quantization(label)
+        token += self.dt_quant_num * self.e_quant_num * self.dow_quantization(day_of_week)
         token += self.e_quant_num*self.dt_quantization(date_time)
         token += self.e_quantization(elapsed_time)
         return token
@@ -113,12 +115,6 @@ class FeatureQuantization:
         date_time_token = token % self.dt_quant_num
         token //= self.dt_quant_num
         
-        date_token = token % self.date_quant_num
-        token //= self.date_quant_num
-        
-        month_token = token % self.month_quant_num
-        token //= self.month_quant_num
-        
         dow_token = token % self.dow_quant_num
         token //= self.dow_quant_num
         
@@ -127,7 +123,7 @@ class FeatureQuantization:
         
         touch_token = token % self.touch_quant_num
         
-        return label_token, month_token, date_token, dow_token, date_time_token, elapsed_token, touch_token
+        return label_token, dow_token, date_time_token, elapsed_token, touch_token
 
 
 class Dataset:
@@ -135,25 +131,23 @@ class Dataset:
         # Initialize the Dataset with optional quantization and user count data.
         # If no quantization object is provided, create a default FeatureQuantization object.
         if quantization is None:
-            quantization = FeatureQuantization(label_quant_num=28, dow_quant_num=7, month_quant_num=12,
-                                            date_quant_num=31, dt_quant_num=5, e_quant_num=7, touch_quant_num=2)
+            quantization = FeatureQuantization(label_quant_num=28, dow_quant_num=2, dt_quant_num=6, e_quant_num=4, touch_quant_num=2)
         self.quantization = quantization  # Object that handles the quantization process.
         self.num_tokens = self.quantization.quant_num  # Number of quantization tokens.
         
-    def gen_dataset(self, df, num_meshs=None):
-        # Generate a dataset from a DataFrame, filtering out invalid mesh IDs and applying quantization.
+    def gen_dataset(self, df, num_items=None):
+        # Generate a dataset from a DataFrame, filtering out invalid item IDs and applying quantization.
         self.dataset = []  # Initialize an empty list to store dataset entries.
-        # for m, e, sdt, dow, ih in zip(stay_df["mesh_id"], stay_df["stay_time"], stay_df["arrival_time"], stay_df["day_of_week"], stay_df["is_holiday"]):
-        for id, label, date, dow, is_touch in zip(df["id"], df["label"], df["day_of_week"]):
-            token = self.quantization.quantization(dow, ih, sdt, e)  # Quantize the features.
-            self.dataset.append((m, token))  # Append the mesh ID and token to the dataset.
+        for id, label, arrival_time, stay_time, dow, is_touch in zip(df["id"], df["label"], df["arrival_time"], df["stay_time"], df["day_of_week"], df["is_touch"]):
+            token = self.quantization.quantization(label, dow, arrival_time, stay_time, is_touch)  # Quantize the features.
+            self.dataset.append((id, token))  # Append the item ID and token to the dataset.
         
         self.dataset = torch.tensor(self.dataset)  # Convert the dataset list to a tensor.
-        # Determine the number of meshes if not provided.
-        if num_meshs is None:
-            self.num_meshs = int(self.dataset[:, 0].max() + 1)
+        # Determine the number of itemes if not provided.
+        if num_items is None:
+            self.num_items = int(self.dataset[:, 0].max() + 1)
         else:
-            self.num_meshs = num_meshs
+            self.num_items = num_items
         self.datasize = len(self.dataset)
         
         
@@ -163,14 +157,14 @@ class Dataset:
         self.anchor_dataset = []
         for m, e, sdt, dow, ih in zip(anchor_df["anchor_id"], anchor_df["stay_time"], anchor_df["arrival_time"], anchor_df["day_of_week"], anchor_df["is_holiday"]):
             token = self.quantization.quantization(dow, ih, sdt, e)  # Quantize the features.
-            self.anchor_dataset.append((m, token))  # Append the mesh ID and token to the dataset.
+            self.anchor_dataset.append((m, token))  # Append the item ID and token to the dataset.
 
         self.anchor_dataset = torch.tensor(self.anchor_dataset)  # Convert the dataset list to a tensor.
         self.num_anchors = int(self.anchor_dataset[:, 0].max() + 1)
         self.anchor_datasize = len(self.anchor_dataset)
         
-        self.anchor_dataset[:, 0] = self.anchor_dataset[:, 0] + self.num_meshs
-        self.num_meshs = self.num_meshs + self.num_anchors
+        self.anchor_dataset[:, 0] = self.anchor_dataset[:, 0] + self.num_items
+        self.num_items = self.num_items + self.num_anchors
             
 
 # Functions for train Area2Vec
@@ -192,8 +186,7 @@ def train(model, dataset, save_path=None, batch_size=1024, learning_rate=0.01, n
     torch.save(model.state_dict(), save_path + "models/model" + str(0) + ".pth")  # initial weight
 
     dataset = dataset.to(model.device)
-    train_loader = torch.utils.data.DataLoader(
-        dataset, batch_size=batch_size, shuffle=True)
+    train_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
         
     criterion_category = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)

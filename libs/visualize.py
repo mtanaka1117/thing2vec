@@ -3,6 +3,7 @@ import collections
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FuncFormatter
 import numpy as np
+from tqdm import tqdm
 
 
 def mesh_data_to_geojson(mesh_data, keys=None):
@@ -25,7 +26,7 @@ class StackedFeatureGrapher:
         self.day_counts = day_counts if day_counts else [5, 2] 
         self.quantization = quantization        
         self.color_list = ["sienna", "darkorange", "yellowgreen", "seagreen", "mediumturquoise", "royalblue", "plum", "green", "orchid", "grey",
-                           "lime", "azure", "lavender", "blue", "green", "beige", "navy", "violet", "skyblue"]
+                            "lime", "azure", "lavender", "blue", "green", "beige", "navy", "violet", "skyblue"]
     
     def sort_aggregated_data(self, data_array):
         '''
@@ -54,7 +55,7 @@ class StackedFeatureGrapher:
             data_array[cls][is_weekend][split][dt_num] += add_value
 
         for cls, dow, sdt, e, ih, split in tqdm(zip(all_df[cluster_col], all_df["day_of_week"], all_df["arrival_time"], 
-                                             all_df["stay_time"], all_df["is_holiday"], all_df[split_col])):
+                                                all_df["stay_time"], all_df["is_holiday"], all_df[split_col])):
     
             dt_num = int(sdt.hour) * 2 + sdt.minute // 30
             stay_num = int(e // 30) + 1
@@ -146,4 +147,3 @@ class StackedFeatureGrapher:
         fig.tight_layout()
         plt.show()
 
- 
