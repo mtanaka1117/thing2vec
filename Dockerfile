@@ -7,4 +7,8 @@ RUN pip install matplotlib
 RUN pip install umap-learn
 RUN pip install seaborn
 
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+
 WORKDIR /thing2vec

@@ -104,27 +104,27 @@ class Dataset:
             self.num_meshs = num_meshs
         self.datasize = len(self.dataset)
             
-    def gen_anchor_dataset(self, anchor_df):
-            if self.quantization == None:
-                quantization = FeatureQuantization()
-            self.anchor_dataset = []
-            for m, e, sdt, dow, ih in zip(anchor_df["anchor_id"], anchor_df["stay_time"], anchor_df["arrival_time"], anchor_df["day_of_week"], anchor_df["is_holiday"]):
-                token = self.quantization.quantization(dow, ih, sdt, e)  # Quantize the features.
-                self.anchor_dataset.append((m, token))  # Append the mesh ID and token to the dataset.
+    # def gen_anchor_dataset(self, anchor_df):
+    #         if self.quantization == None:
+    #             self.quantization = FeatureQuantization()
+    #         self.anchor_dataset = []
+    #         for m, e, sdt, dow, ih in zip(anchor_df["anchor_id"], anchor_df["stay_time"], anchor_df["arrival_time"], anchor_df["day_of_week"], anchor_df["is_holiday"]):
+    #             token = self.quantization.quantization(dow, ih, sdt, e)  # Quantize the features.
+    #             self.anchor_dataset.append((m, token))  # Append the mesh ID and token to the dataset.
 
-            self.anchor_dataset = torch.tensor(self.anchor_dataset)  # Convert the dataset list to a tensor.
-            self.num_anchors = int(self.anchor_dataset[:, 0].max() + 1)
-            self.anchor_datasize = len(self.anchor_dataset)
+    #         self.anchor_dataset = torch.tensor(self.anchor_dataset)  # Convert the dataset list to a tensor.
+    #         self.num_anchors = int(self.anchor_dataset[:, 0].max() + 1)
+    #         self.anchor_datasize = len(self.anchor_dataset)
             
-            self.anchor_dataset[:, 0] = self.anchor_dataset[:, 0] + self.num_meshs
-            self.num_meshs = self.num_meshs + self.num_anchors
+    #         self.anchor_dataset[:, 0] = self.anchor_dataset[:, 0] + self.num_meshs
+    #         self.num_meshs = self.num_meshs + self.num_anchors
             
 
 # Functions for train Area2Vec
 def initialize_save_path(save_path):
     if save_path is None:
         today_date = str(datetime.datetime.today().date())
-        save_path = f"../output/{today_date}/"
+        save_path = f"./output/{today_date}/"
     if not os.path.exists(save_path):
         os.makedirs(save_path, exist_ok=True)
         os.makedirs(save_path + "models", exist_ok=True)
@@ -136,7 +136,7 @@ def train(model, dataset, save_path=None, batch_size=1024, learning_rate=0.01, n
     save_path = initialize_save_path(save_path)
     writer = SummaryWriter(log_dir=save_path + "log")
     torch.save(model.state_dict(), save_path + "models/model" +
-               str(0) + ".pth")  # initial weight
+                str(0) + ".pth")  # initial weight
 
     dataset = dataset.to(model.device)
     train_loader = torch.utils.data.DataLoader(
@@ -158,9 +158,9 @@ def train(model, dataset, save_path=None, batch_size=1024, learning_rate=0.01, n
         writer.add_scalar("loss", float(loss_epoch) / itr, epoch)
         if (epoch + 1) % save_epoch == 0:
             torch.save(model.state_dict(), save_path +
-                       "models/model" + str(epoch+1) + ".pth")
+                        "models/model" + str(epoch+1) + ".pth")
             print('Epoch:', '%04d' % (epoch + 1), 'loss =',
-                  '{:.6f}'.format(loss_epoch/itr))
+                    '{:.6f}'.format(loss_epoch/itr))
     
 def calculate_stability_weight(epoch, epochs, alpha=0.1, beta=1.0, weight_type="exponential",datasize=None, anchor_datasize=None):
     if weight_type == "linear":
@@ -190,7 +190,7 @@ def train_with_anchoring(model, dataset, save_path=None, batch_size=1024, learni
     if batchsize_anchor > batch_size:
         batchsize_anchor = batch_size
     train_loader_anchor = torch.utils.data.DataLoader(dataset.anchor_dataset, batch_size=batchsize_anchor, shuffle=True)
-   
+    
     criterion_category = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     for epoch in tqdm(range(num_epochs)):
@@ -218,19 +218,19 @@ def train_with_anchoring(model, dataset, save_path=None, batch_size=1024, learni
         writer.add_scalar("loss_anchor", loss_anchor_epoch / itr, epoch)
         if (epoch + 1) % save_epoch == 0:
             torch.save(model.state_dict(), save_path +
-                       "models/model" + str(epoch+1) + ".pth")
+                        "models/model" + str(epoch+1) + ".pth")
             print('Epoch:', '%04d' % (epoch + 1), 'loss =',
-                  '{:.6f}'.format(loss_epoch/itr))
-            
+                    '{:.6f}'.format(loss_epoch/itr))
+
 def train_without_anchoring(model, dataset, batch_size=1024, learning_rate=0.01, num_epochs=100, save_path=None, save_epoch=10):
     save_path = initialize_save_path(save_path)
     writer = SummaryWriter(log_dir=save_path + "log")
     torch.save(model.state_dict(), os.path.join(save_path, "models/model0.pth"))
     
     dataset.dataset = dataset.dataset.to(model.device)
-    dataset.anchor_dataset = dataset.anchor_dataset.to(model.device)
+    # dataset.anchor_dataset = dataset.anchor_dataset.to(model.device)
     train_loader = torch.utils.data.DataLoader(dataset.dataset, batch_size=batch_size, shuffle=True)
-   
+
     criterion_category = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     for epoch in tqdm(range(num_epochs)):
@@ -247,6 +247,6 @@ def train_without_anchoring(model, dataset, batch_size=1024, learning_rate=0.01,
         writer.add_scalar("loss", float(loss_epoch) / itr, epoch)
         if (epoch + 1) % save_epoch == 0:
             torch.save(model.state_dict(), save_path +
-                       "models/model" + str(epoch+1) + ".pth")
+                        "models/model" + str(epoch+1) + ".pth")
             print('Epoch:', '%04d' % (epoch + 1), 'loss =',
-                  '{:.6f}'.format(loss_epoch/itr))
+                    '{:.6f}'.format(loss_epoch/itr))

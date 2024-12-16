@@ -1,6 +1,4 @@
 import numpy as np
-import sys
-sys.path.append('../../libs/')  # FeatureQuantization クラスが含まれるパスを追加
 from train_utils import FeatureQuantization
 
 def create_stay_weight_matrix(day_counts, quantization):

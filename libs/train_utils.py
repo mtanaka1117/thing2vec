@@ -63,7 +63,8 @@ class FeatureQuantization:
             21~6時: 5, 深夜
         ]
         '''
-        hour = int(dt.split(":")[0])
+        dt = datetime.datetime.strptime("2024-07-31 15:38:39", "%Y-%m-%d %H:%M:%S")
+        hour = dt.hour
         if hour>=6 and hour<9:
             return 0
         elif hour>=9 and hour<12:
@@ -97,13 +98,13 @@ class FeatureQuantization:
 
 
     # 量子化
-    def quantization(self, label, day_of_week, date_time, elapsed_time, is_touch):
+    def quantization(self, label, day_of_week, arrival_time, elapsed_time, is_touch):
         token = int(0)
         
         token += self.label_quant_num * self.dow_quant_num * self.dt_quant_num * self.e_quant_num * self.touch_quantization(is_touch)
         token += self.dow_quant_num * self.dt_quant_num * self.e_quant_num * self.label_quantization(label)
         token += self.dt_quant_num * self.e_quant_num * self.dow_quantization(day_of_week)
-        token += self.e_quant_num*self.dt_quantization(date_time)
+        token += self.e_quant_num*self.dt_quantization(arrival_time)
         token += self.e_quantization(elapsed_time)
         return token
 
@@ -134,44 +135,29 @@ class Dataset:
             quantization = FeatureQuantization(label_quant_num=28, dow_quant_num=2, dt_quant_num=6, e_quant_num=4, touch_quant_num=2)
         self.quantization = quantization  # Object that handles the quantization process.
         self.num_tokens = self.quantization.quant_num  # Number of quantization tokens.
-        
+    
     def gen_dataset(self, df, num_items=None):
         # Generate a dataset from a DataFrame, filtering out invalid item IDs and applying quantization.
         self.dataset = []  # Initialize an empty list to store dataset entries.
         for id, label, arrival_time, stay_time, dow, is_touch in zip(df["id"], df["label"], df["arrival_time"], df["stay_time"], df["day_of_week"], df["is_touch"]):
             token = self.quantization.quantization(label, dow, arrival_time, stay_time, is_touch)  # Quantize the features.
-            self.dataset.append((id, token))  # Append the item ID and token to the dataset.
+            # id = int(id.replace('_', ''))
+            self.dataset.append((label, token))  # Append the item ID and token to the dataset.
         
         self.dataset = torch.tensor(self.dataset)  # Convert the dataset list to a tensor.
-        # Determine the number of itemes if not provided.
+        
         if num_items is None:
             self.num_items = int(self.dataset[:, 0].max() + 1)
         else:
             self.num_items = num_items
         self.datasize = len(self.dataset)
-        
-        
-    def gen_anchor_dataset(self, anchor_df):
-        if self.quantization == None:
-            self.quantization = FeatureQuantization()
-        self.anchor_dataset = []
-        for m, e, sdt, dow, ih in zip(anchor_df["anchor_id"], anchor_df["stay_time"], anchor_df["arrival_time"], anchor_df["day_of_week"], anchor_df["is_holiday"]):
-            token = self.quantization.quantization(dow, ih, sdt, e)  # Quantize the features.
-            self.anchor_dataset.append((m, token))  # Append the item ID and token to the dataset.
 
-        self.anchor_dataset = torch.tensor(self.anchor_dataset)  # Convert the dataset list to a tensor.
-        self.num_anchors = int(self.anchor_dataset[:, 0].max() + 1)
-        self.anchor_datasize = len(self.anchor_dataset)
-        
-        self.anchor_dataset[:, 0] = self.anchor_dataset[:, 0] + self.num_items
-        self.num_items = self.num_items + self.num_anchors
-            
 
 # Functions for train Area2Vec
 def initialize_save_path(save_path):
     if save_path is None:
         today_date = str(datetime.datetime.today().date())
-        save_path = f"../output/{today_date}/"
+        save_path = f"./output/{today_date}/"
     if not os.path.exists(save_path):
         os.makedirs(save_path, exist_ok=True)
         os.makedirs(save_path + "models", exist_ok=True)
@@ -187,10 +173,11 @@ def train(model, dataset, save_path=None, batch_size=1024, learning_rate=0.01, n
 
     dataset = dataset.to(model.device)
     train_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
-        
+    
     criterion_category = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-    for epoch in range(num_epochs):
+    
+    for epoch in tqdm(range(num_epochs)):
         loss_epoch = 0.0
         itr = 0
         for batch in tqdm(train_loader):
@@ -272,7 +259,6 @@ def train_without_anchoring(model, dataset, batch_size=1024, learning_rate=0.01,
     torch.save(model.state_dict(), os.path.join(save_path, "models/model0.pth"))
     
     dataset.dataset = dataset.dataset.to(model.device)
-    dataset.anchor_dataset = dataset.anchor_dataset.to(model.device)
     train_loader = torch.utils.data.DataLoader(dataset.dataset, batch_size=batch_size, shuffle=True)
 
     criterion_category = nn.CrossEntropyLoss()
