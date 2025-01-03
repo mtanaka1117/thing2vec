@@ -136,13 +136,14 @@ class Dataset:
         self.quantization = quantization  # Object that handles the quantization process.
         self.num_tokens = self.quantization.quant_num  # Number of quantization tokens.
     
+    
     def gen_dataset(self, df, num_items=None):
         # Generate a dataset from a DataFrame, filtering out invalid item IDs and applying quantization.
         self.dataset = []  # Initialize an empty list to store dataset entries.
         for id, label, arrival_time, stay_time, dow, is_touch in zip(df["id"], df["label"], df["arrival_time"], df["stay_time"], df["day_of_week"], df["is_touch"]):
             token = self.quantization.quantization(label, dow, arrival_time, stay_time, is_touch)  # Quantize the features.
             # id = int(id.replace('_', ''))
-            self.dataset.append((label, token))  # Append the item ID and token to the dataset.
+            self.dataset.append((int(id), token))  # Append the item ID and token to the dataset.
         
         self.dataset = torch.tensor(self.dataset)  # Convert the dataset list to a tensor.
         
@@ -166,7 +167,7 @@ def initialize_save_path(save_path):
     return save_path
 
 
-def train(model, dataset, save_path=None, batch_size=1024, learning_rate=0.01, num_epochs=100, save_epoch=10):
+def train(model, dataset, save_path=None, batch_size=4, learning_rate=0.01, num_epochs=200, save_epoch=10):
     save_path = initialize_save_path(save_path)
     writer = SummaryWriter(log_dir=save_path + "log")
     torch.save(model.state_dict(), save_path + "models/model" + str(0) + ".pth")  # initial weight

@@ -54,10 +54,10 @@ def train_thing2vec(input_path, batch_size, learning_rate, num_epochs, save_epoc
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Description of your program')
-    parser.add_argument('--input_path', type=str, help='Input csv file path', default="./data/thing_data/stay_df.csv")
+    parser.add_argument('--input_path', type=str, help='Input csv file path', default="./data/thing_train_data/sorted_kishino.csv")
     parser.add_argument('--batch_size', type=int, help='Batchsize in training', default=4)
     parser.add_argument('--learning_rate', type=float, help='Leaning rate in training', default=0.01)
-    parser.add_argument('--num_epochs', type=int, help='Number of epochs in training', default=100)
+    parser.add_argument('--num_epochs', type=int, help='Number of epochs in training', default=200)
     parser.add_argument('--save_epoch', type=int, help='How many epochs to save the model', default=10)
     # parser.add_argument('--alpha', type=float, help='Initial anchor power', default=0.3)
     # parser.add_argument('--beta', type=float, help='Final anchor power', default=1.0)

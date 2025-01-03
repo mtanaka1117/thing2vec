@@ -3,6 +3,7 @@ from math import radians, sin, cos, sqrt, asin, fabs
 from numpy.linalg import norm
 import collections
 from sklearn.cluster import KMeans, DBSCAN
+import statistics
 
 def cosSim(v1: "ndarray", v2: "ndarray") -> "ndarray":
     return np.dot(v1, v2) / (norm(v1) * norm(v2))
@@ -63,7 +64,8 @@ def assign_to_nearest_anchor(vectors, anchors):
     nearest_centroid_indices = np.argmin(distances, axis=1)
     element_num_in_cluster = collections.Counter(nearest_centroid_indices)
     return nearest_centroid_indices, element_num_in_cluster  
-  
+
+
 def do_kmeans(cluster_num, vecs, with_center=False, seed=20210401, weight=None):
     """
     Perform K-means clustering on the provided vectors.
