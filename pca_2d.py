@@ -11,8 +11,8 @@ import pandas as pd
 from adjustText import adjust_text
 
 
-num_items = 64
-embed_size = 10
+num_items = 251
+embed_size = 8
 num_output_tokens=2688
 
 # load model
@@ -28,39 +28,33 @@ with torch.no_grad():
     embeddings = model.embedding(item_indices).cpu()
 normalized_embeddings = F.normalize(embeddings, p=2, dim=0).numpy()
 
-# with open('./output.csv', "w") as f:
-#     for idx, vector in enumerate(embeddings):
-#         vector_str = ",".join(map(str, vector))  # スペース区切りに変換
-#         f.write(f"{idx},{vector_str}\n") 
-
-
-n_clusters = 5
+n_clusters = 4
 kmeans = KMeans(n_clusters=n_clusters, random_state=42)
 labels = kmeans.fit_predict(normalized_embeddings)
 
 pca = PCA(n_components=2)
 reduced_vectors = pca.fit_transform(normalized_embeddings)
 
-plt.scatter(reduced_vectors[:, 0], reduced_vectors[:, 1], c=labels, marker='o')
+plt.scatter(reduced_vectors[:, 0], reduced_vectors[:, 1], c=labels, cmap='jet', marker='o')
 plt.colorbar()
 
 
-csv_file = './data/thing_train_data/analysis_kishino.csv'
+csv_file = './data/thing_train_data/sorted_kishino.csv'
 df = pd.read_csv(csv_file)
 labels = df["label"].tolist()
 
 
-texts = []
-for i, label in enumerate(labels):
-    x, y = reduced_vectors[i, 0], reduced_vectors[i, 1]
-    texts.append(plt.text(x, y, (i, label), size=10))
+# texts = []
+# for i, label in enumerate(labels):
+#     x, y = reduced_vectors[i, 0], reduced_vectors[i, 1]
+#     texts.append(plt.text(x, y, (i, label), size=10))
 
 
-adjust_text(
-    texts,
-    expand_text=(1.2, 1.2),
-    arrowprops=dict(arrowstyle='->', color='red')
-)
+# adjust_text(
+#     texts,
+#     expand_text=(1.2, 1.2),
+#     arrowprops=dict(arrowstyle='->', color='red')
+# )
 
 plt.title("Clustered Embedding Vectors")
 plt.savefig('pca2d.png')

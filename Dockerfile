@@ -9,5 +9,6 @@ RUN pip install adjustText
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
+RUN pip install pyclustering
 
 WORKDIR /thing2vec
