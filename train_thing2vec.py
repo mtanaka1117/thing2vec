@@ -63,7 +63,7 @@ if __name__ == "__main__":
     # parser.add_argument('--beta', type=float, help='Final anchor power', default=1.0)
     # parser.add_argument('--weight_type', type=str, help='Weight function for anchor power', default="exponential")   
     parser.add_argument('--cuda', type=int, help='Cuda number to use', default=0) 
-    parser.add_argument('--emb_dim', type=int, help='Cuda number to use', default=8)
+    parser.add_argument('--emb_dim', type=int, help='Cuda number to use', default=10)
     args = parser.parse_args()
     train_thing2vec(args.input_path, args.batch_size, args.learning_rate, args.num_epochs, 
                     args.save_epoch, args.cuda, args.emb_dim)
