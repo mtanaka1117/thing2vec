@@ -8,7 +8,7 @@ import torch.nn as nn
 from torch import optim
 
 class FeatureQuantization:
-    def __init__(self, label_quant_num=28, dow_quant_num=2, dt_quant_num=6, e_quant_num=4, touch_quant_num=2,
+    def __init__(self, label_quant_num=24, dow_quant_num=2, dt_quant_num=6, e_quant_num=4, touch_quant_num=2,
                  x_center_num=5, y_center_num=5):
         super().__init__()
 
@@ -134,10 +134,10 @@ class FeatureQuantization:
     def quantization(self, label, day_of_week, arrival_time, elapsed_time, x_center, y_center, is_touch):
         token = int(0)
         
-        # token += self.x_center * self.y_center * self.width * self.height * self.label_quant_num * self.dow_quant_num * self.dt_quant_num * self.e_quant_num * self.touch_quantization(is_touch)
         token += self.x_center_num * self.y_center_num * self.label_quant_num * self.dow_quant_num * self.dt_quant_num * self.e_quant_num * self.touch_quantization(is_touch)
         token += self.y_center_num * self.label_quant_num * self.dow_quant_num * self.dt_quant_num * self.e_quant_num * self.x_coord_quantization(x_center)
         token += self.label_quant_num * self.dow_quant_num * self.dt_quant_num * self.e_quant_num * self.y_coord_quantization(y_center)
+        # token += self.label_quant_num * self.dow_quant_num * self.dt_quant_num * self.e_quant_num * self.touch_quantization(is_touch)
         token += self.dow_quant_num * self.dt_quant_num * self.e_quant_num * self.label_quantization(label)
         token += self.dt_quant_num * self.e_quant_num * self.dow_quantization(day_of_week)
         token += self.e_quant_num*self.dt_quantization(arrival_time)

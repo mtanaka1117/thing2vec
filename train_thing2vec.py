@@ -59,11 +59,8 @@ if __name__ == "__main__":
     parser.add_argument('--learning_rate', type=float, help='Leaning rate in training', default=0.01)
     parser.add_argument('--num_epochs', type=int, help='Number of epochs in training', default=200)
     parser.add_argument('--save_epoch', type=int, help='How many epochs to save the model', default=10)
-    # parser.add_argument('--alpha', type=float, help='Initial anchor power', default=0.3)
-    # parser.add_argument('--beta', type=float, help='Final anchor power', default=1.0)
-    # parser.add_argument('--weight_type', type=str, help='Weight function for anchor power', default="exponential")   
     parser.add_argument('--cuda', type=int, help='Cuda number to use', default=0) 
-    parser.add_argument('--emb_dim', type=int, help='Cuda number to use', default=10)
+    parser.add_argument('--emb_dim', type=int, help='Cuda number to use', default=15)
     args = parser.parse_args()
     train_thing2vec(args.input_path, args.batch_size, args.learning_rate, args.num_epochs, 
                     args.save_epoch, args.cuda, args.emb_dim)

@@ -16,7 +16,6 @@ def kmeans_2d(normalized_embeddings, clusters):
     reduced_vectors = pca.fit_transform(normalized_embeddings)
 
     plt.scatter(reduced_vectors[:, 0], reduced_vectors[:, 1], c=clusters, cmap='jet', marker='o')
-    plt.colorbar()
 
     # texts = []
     # for i, label in enumerate(clusters):
@@ -30,7 +29,7 @@ def kmeans_2d(normalized_embeddings, clusters):
     # )
 
     plt.savefig('kmeans_2d.jpg')
-
+    plt.close()
 
 
 def kmeans_3d(normalized_embeddings, clusters):
@@ -54,30 +53,23 @@ def kmeans_3d(normalized_embeddings, clusters):
         
     plt.tight_layout()
     plt.savefig('kmeans_3d.jpg')
+    plt.close()
 
 
-if __name__ == '__main__':
+def kmeans_plot(num_items, embed_size, num_output_tokens, n_clusters):
 
-    num_output_tokens = 28*2*6*4*2*5*5
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--num_items', type=int)
-    parser.add_argument('--embed_size', type=int, default=10)
-    args = parser.parse_args()
-
-    model = Thing2Vec(args.num_items, args.embed_size, num_output_tokens)
+    model = Thing2Vec(num_items, embed_size, num_output_tokens)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = model.to(device)
     model.load_model('./output/model/models/model200.pth')
     model.eval()
 
-    item_indices = torch.arange(args.num_items).to(device) 
+    item_indices = torch.arange(num_items).to(device) 
     with torch.no_grad():
         embeddings = model.embedding(item_indices).cpu()
 
     normalized_embeddings = F.normalize(embeddings, p=2, dim=0).numpy()
 
-    n_clusters = 8
     kmeans = KMeans(n_clusters=n_clusters, random_state=42)
     clusters = kmeans.fit_predict(normalized_embeddings)
 
@@ -88,3 +80,16 @@ if __name__ == '__main__':
 
     kmeans_2d(normalized_embeddings, clusters)
     kmeans_3d(normalized_embeddings, clusters)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-i', '--num_items', type=int)
+    parser.add_argument('--embed_size', type=int, default=10)
+    parser.add_argument('--n_clusters', type=int, default=5)
+    args = parser.parse_args()
+
+    num_tokens = 24*2*6*4*2*5*5
+
+    kmeans_plot(args.num_items, args.embed_size, num_tokens, args.n_clusters)
+    

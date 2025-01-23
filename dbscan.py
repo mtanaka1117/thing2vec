@@ -43,7 +43,7 @@ def dbscan_3d(normalized_embeddings, clusters):
 
     plt.tight_layout()
     plt.savefig('dbscan_3d.jpg')
-
+    plt.close()
 
 
 def dbscan_2d(normalized_embeddings, clusters):
@@ -71,33 +71,25 @@ def dbscan_2d(normalized_embeddings, clusters):
     plt.title("DBSCAN Clustering")
     plt.xlabel("X1")
     plt.ylabel("X2")
+    plt.legend()
     plt.savefig('dbscan_2d.jpg')
+    plt.close()
 
 
+def dbscan_plot(num_items, embed_size, num_output_tokens, eps):
 
-if __name__ == '__main__':
-
-    num_output_tokens = 28*2*6*4*2*5*5
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--num_items', type=int)
-    parser.add_argument('--embed_size', type=int, default=10)
-    args = parser.parse_args()
-
-    model = Thing2Vec(args.num_items, args.embed_size, num_output_tokens)
+    model = Thing2Vec(num_items, embed_size, num_output_tokens)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = model.to(device)
     model.load_model('./output/model/models/model200.pth')
     model.eval()
 
-
-    item_indices = torch.arange(args.num_items).to(device) 
+    item_indices = torch.arange(num_items).to(device) 
     with torch.no_grad():
         embeddings = model.embedding(item_indices).cpu()
     normalized_embeddings = F.normalize(embeddings, p=2, dim=0).numpy()
 
-
-    dbscan = DBSCAN(eps=0.2, min_samples=5)
+    dbscan = DBSCAN(eps, min_samples=5)
     clusters = dbscan.fit_predict(normalized_embeddings)
     csv_file = './data/thing_train_data/sorted_kishino.csv'
     df = pd.read_csv(csv_file)
@@ -107,3 +99,16 @@ if __name__ == '__main__':
 
     dbscan_2d(normalized_embeddings, clusters)
     dbscan_3d(normalized_embeddings, clusters)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-i', '--num_items', type=int)
+    parser.add_argument('--embed_size', type=int, default=10)
+    parser.add_argument('--num_tokens', type=int, default=67200)
+    parser.add_argument('--eps', type=int, default=0.1)
+    args = parser.parse_args()
+
+    num_tokens = 24*2*6*4*2*5*5
+
+    dbscan_plot(args.num_items, args.embed_size, num_tokens)
