@@ -17,16 +17,16 @@ def kmeans_2d(normalized_embeddings, clusters):
 
     plt.scatter(reduced_vectors[:, 0], reduced_vectors[:, 1], c=clusters, cmap='jet', marker='o')
 
-    # texts = []
-    # for i, label in enumerate(clusters):
-    #     x, y = reduced_vectors[i, 0], reduced_vectors[i, 1]
-    #     texts.append(plt.text(x, y, (i, label), size=10))
+    texts = []
+    for i, label in enumerate(clusters):
+        x, y = reduced_vectors[i, 0], reduced_vectors[i, 1]
+        texts.append(plt.text(x, y, (i, label), size=10))
 
-    # adjust_text(
-    #     texts,
-    #     expand_text=(1.2, 1.2),
-    #     arrowprops=dict(arrowstyle='->', color='red')
-    # )
+    adjust_text(
+        texts,
+        expand_text=(1.2, 1.2),
+        arrowprops=dict(arrowstyle='->', color='red')
+    )
 
     plt.savefig('kmeans_2d.jpg')
     plt.close()
@@ -56,12 +56,12 @@ def kmeans_3d(normalized_embeddings, clusters):
     plt.close()
 
 
-def kmeans_plot(num_items, embed_size, num_output_tokens, n_clusters):
+def kmeans_plot(num_items, embed_size, num_output_tokens, n_clusters, model_path):
 
     model = Thing2Vec(num_items, embed_size, num_output_tokens)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = model.to(device)
-    model.load_model('./output/model/models/model200.pth')
+    model.load_model(model_path)
     model.eval()
 
     item_indices = torch.arange(num_items).to(device) 
@@ -87,9 +87,11 @@ if __name__ == '__main__':
     parser.add_argument('-i', '--num_items', type=int)
     parser.add_argument('--embed_size', type=int, default=10)
     parser.add_argument('--n_clusters', type=int, default=5)
+    parser.add_argument('--model', type=str, default='./output/model/models/model200.pth')
     args = parser.parse_args()
 
-    num_tokens = 24*2*6*4*2*5*5
+    num_tokens = 24*2*6*5*2*5*5
+    epoch = 200
 
-    kmeans_plot(args.num_items, args.embed_size, num_tokens, args.n_clusters)
+    kmeans_plot(args.num_items, args.embed_size, num_tokens, args.n_clusters, args.model)
     

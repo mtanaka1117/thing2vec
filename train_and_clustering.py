@@ -12,16 +12,18 @@ if __name__ == "__main__":
     parser.add_argument('--save_epoch', type=int, help='How many epochs to save the model', default=10)
     parser.add_argument('--cuda', type=int, help='Cuda number to use', default=0) 
     parser.add_argument('--emb_dim', type=int, help='Cuda number to use', default=15)
-    parser.add_argument('-i', '--num_items', type=int)
-    parser.add_argument('--eps', type=int, default=0.1)
+    parser.add_argument('-i', '--num_items', type=int) # データ数
+    parser.add_argument('--eps', type=float, default=0.25)
     parser.add_argument('--n_clusters', type=int, default=5)
+    parser.add_argument('--model', type=str, default='./output/model/models/model200.pth')
     args = parser.parse_args()
     train_thing2vec(args.input_path, args.batch_size, args.learning_rate, args.num_epochs, 
                     args.save_epoch, args.cuda, args.emb_dim)
     
-    num_tokens = 24*2*6*4*2*5*5
-    # num_tokens = 24*2*6*4*2
+    # num_tokens = 24*2*6*5*2*5*5
+    num_tokens = 24*2*6*5*2
+    # num_tokens = 24*2*6*2
 
-    dbscan_plot(args.num_items, args.emb_dim, num_tokens, args.eps)
-    kmeans_plot(args.num_items, args.emb_dim, num_tokens, args.n_clusters)
+    dbscan_plot(args.num_items, args.emb_dim, num_tokens, args.eps, args.model)
+    kmeans_plot(args.num_items, args.emb_dim, num_tokens, args.n_clusters, args.model)
 

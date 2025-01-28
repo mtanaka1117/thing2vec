@@ -76,12 +76,12 @@ def dbscan_2d(normalized_embeddings, clusters):
     plt.close()
 
 
-def dbscan_plot(num_items, embed_size, num_output_tokens, eps):
+def dbscan_plot(num_items, embed_size, num_output_tokens, eps, model_path):
 
     model = Thing2Vec(num_items, embed_size, num_output_tokens)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = model.to(device)
-    model.load_model('./output/model/models/model200.pth')
+    model.load_model(model_path)
     model.eval()
 
     item_indices = torch.arange(num_items).to(device) 
@@ -105,10 +105,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', '--num_items', type=int)
     parser.add_argument('--embed_size', type=int, default=10)
-    parser.add_argument('--num_tokens', type=int, default=67200)
-    parser.add_argument('--eps', type=int, default=0.1)
+    parser.add_argument('--eps', type=float, default=0.1)
+    parser.add_argument('--model', type=str, default='./output/model/models/model200.pth')
     args = parser.parse_args()
 
-    num_tokens = 24*2*6*4*2*5*5
+    # num_tokens = 24*2*6*5*2*5*5
+    num_tokens = 24*2*6*5*2
 
-    dbscan_plot(args.num_items, args.embed_size, num_tokens)
+    dbscan_plot(args.num_items, args.embed_size, num_tokens, args.eps, args.model)
