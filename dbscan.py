@@ -12,15 +12,17 @@ import pandas as pd
 from adjustText import adjust_text
 import argparse
 
+from matplotlib.ticker import MaxNLocator
 
 def dbscan_3d(normalized_embeddings, clusters):
     pca = PCA(n_components=3)
     reduced_data = pca.fit_transform(normalized_embeddings)
 
-    fig = plt.figure(figsize=(12, 5))
+    fig = plt.figure(figsize=(15, 5))
 
     unique_clusters = set(clusters)
-    colors = plt.cm.jet(np.linspace(0, 1, len(unique_clusters)))
+    # colors = plt.cm.jet(np.linspace(0, 1, len(unique_clusters)))
+    colors = ['blue', 'darkturquoise', 'green', 'limegreen', 'yellow', 'orange', 'red', 'brown', 'salmon']
 
     elevations = [20, 50, 80]
     azimuths = [30, 120, 210]
@@ -34,12 +36,15 @@ def dbscan_3d(normalized_embeddings, clusters):
             ax.scatter(reduced_data[mask, 0], reduced_data[mask, 1], reduced_data[mask, 2], 
                         color=color, label=f'Cluster {label}' if label != -1 else "Noise")
 
-        ax.set_xlabel('PC1')
-        ax.set_ylabel('PC2')
-        ax.set_zlabel('PC3')
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel('Z')
 
         ax.view_init(elev=elev, azim=azim)
-        ax.set_title(f"View: elev={elev}, azim={azim}")
+
+        ax.xaxis.set_major_locator(MaxNLocator(5))
+        ax.yaxis.set_major_locator(MaxNLocator(5))
+        ax.zaxis.set_major_locator(MaxNLocator(5))
 
     plt.tight_layout()
     plt.savefig('dbscan_3d.jpg')
@@ -50,14 +55,14 @@ def dbscan_2d(normalized_embeddings, clusters):
     pca = PCA(n_components=2)
     reduced_data = pca.fit_transform(normalized_embeddings)
 
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(8, 5))
+    colors = ['blue', 'darkturquoise', 'green', 'limegreen', 'yellow', 'orange', 'red', 'brown', 'salmon']
 
     unique_clusters = set(clusters)
-    for cls in unique_clusters:
+    for cls, color in zip(unique_clusters, colors):
         if cls == -1: # ノイズ
             color = 'black'
-        else:
-            color = plt.cm.jet(cls / len(unique_clusters))
+        
         plt.scatter(reduced_data[clusters == cls, 0], reduced_data[clusters == cls, 1], label=f"Cluster {cls}", color=color)
 
     csv_file = './data/thing_train_data/sorted_kishino.csv'
@@ -70,18 +75,18 @@ def dbscan_2d(normalized_embeddings, clusters):
     texts = []
     for i, label in enumerate(labels):
         x, y = reduced_data[i, 0], reduced_data[i, 1]
-        texts.append(plt.text(x, y, (i, label), size=10))
+        texts.append(plt.text(x, y, label, size=10))
 
     adjust_text(
         texts,
-        expand_text=(1.2, 1.2),
+        expand_text=(5, 5),
         arrowprops=dict(arrowstyle='->', color='red')
     )
 
-    plt.title("DBSCAN Clustering")
-    plt.xlabel("X1")
-    plt.ylabel("X2")
-    plt.legend()
+    plt.xlabel("X")
+    plt.ylabel("Y")
+    plt.legend(loc="upper left", bbox_to_anchor=(1,1))
+    plt.tight_layout()
     plt.savefig('dbscan_2d.jpg')
     plt.close()
 
@@ -99,7 +104,7 @@ def dbscan_plot(num_items, embed_size, num_output_tokens, eps, model_path):
         embeddings = model.embedding(item_indices).cpu()
     normalized_embeddings = F.normalize(embeddings, p=2, dim=0).numpy()
 
-    dbscan = DBSCAN(eps, min_samples=5)
+    dbscan = DBSCAN(eps, min_samples=4)
     clusters = dbscan.fit_predict(normalized_embeddings)
     
     dbscan_2d(normalized_embeddings, clusters)

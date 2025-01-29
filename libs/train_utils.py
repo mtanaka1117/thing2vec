@@ -73,15 +73,28 @@ class FeatureQuantization:
         '''
         dt = datetime.datetime.strptime(dt, "%Y-%m-%d %H:%M:%S")
         hour = dt.hour
+        # if hour>=6 and hour<9:
+        #     return 0
+        # elif hour>=9 and hour<12:
+        #     return 1
+        # elif hour>=12 and hour<15:
+        #     return 2
+        # elif hour>=15 and hour<18:
+        #     return 3
+        # elif hour>=18 and hour<21:
+        #     return 4
+        # else:
+        #     return 5
+        
         if hour>=6 and hour<9:
             return 0
         elif hour>=9 and hour<12:
             return 1
         elif hour>=12 and hour<15:
             return 2
-        elif hour>=15 and hour<18:
+        elif hour>=15 and hour<20:
             return 3
-        elif hour>=18 and hour<21:
+        elif hour>=20 and hour<24:
             return 4
         else:
             return 5
