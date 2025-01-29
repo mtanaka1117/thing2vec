@@ -24,9 +24,10 @@ class FeatureQuantization:
         # self.height = height_max
         self.touch_quant_num = touch_quant_num
         
-        # self.quant_num = label_quant_num*dow_quant_num*dt_quant_num*touch_quant_num
-        self.quant_num = label_quant_num*dow_quant_num*dt_quant_num*e_quant_num*touch_quant_num
+        self.quant_num = label_quant_num*dow_quant_num*dt_quant_num*touch_quant_num
+        # self.quant_num = label_quant_num*dow_quant_num*dt_quant_num*e_quant_num*touch_quant_num
         # self.quant_num = label_quant_num*dow_quant_num*dt_quant_num*e_quant_num*self.x_center_num*self.y_center_num*touch_quant_num
+        # self.quant_num = label_quant_num*dow_quant_num*dt_quant_num*self.x_center_num*self.y_center_num*touch_quant_num
 
         self.dow_dic = {"Sunday": 0, "Monday": 1, "Tuesday": 2,
                         "Wednesday": 3, "Thursday": 4, "Friday": 5, "Saturday": 6}
@@ -70,7 +71,7 @@ class FeatureQuantization:
             21~6時: 5, 深夜
         ]
         '''
-        dt = datetime.datetime.strptime("2024-07-31 15:38:39", "%Y-%m-%d %H:%M:%S")
+        dt = datetime.datetime.strptime(dt, "%Y-%m-%d %H:%M:%S")
         hour = dt.hour
         if hour>=6 and hour<9:
             return 0
@@ -135,21 +136,31 @@ class FeatureQuantization:
     def quantization(self, label, day_of_week, arrival_time, elapsed_time, x_center, y_center, is_touch):
         token = int(0)
         
+        # BBOX
         # token += self.x_center_num * self.y_center_num * self.label_quant_num * self.dow_quant_num * self.dt_quant_num * self.e_quant_num * self.touch_quantization(is_touch)
         # token += self.y_center_num * self.label_quant_num * self.dow_quant_num * self.dt_quant_num * self.e_quant_num * self.x_coord_quantization(x_center)
         # token += self.label_quant_num * self.dow_quant_num * self.dt_quant_num * self.e_quant_num * self.y_coord_quantization(y_center)
 
-        token += self.label_quant_num * self.dow_quant_num * self.dt_quant_num * self.e_quant_num * self.touch_quantization(is_touch)
-        token += self.dow_quant_num * self.dt_quant_num * self.e_quant_num * self.label_quantization(label)
-        token += self.dt_quant_num * self.e_quant_num * self.dow_quantization(day_of_week)
-        token += self.e_quant_num*self.dt_quantization(arrival_time)
-        token += self.e_quantization(elapsed_time)
+        # token += self.label_quant_num * self.dow_quant_num * self.dt_quant_num * self.e_quant_num * self.touch_quantization(is_touch)
+        # token += self.dow_quant_num * self.dt_quant_num * self.e_quant_num * self.label_quantization(label)
+        # token += self.dt_quant_num * self.e_quant_num * self.dow_quantization(day_of_week)
+        # token += self.e_quant_num*self.dt_quantization(arrival_time)
+        # token += self.e_quantization(elapsed_time)
 
         # 滞在時間なし
-        # token += self.label_quant_num * self.dow_quant_num * self.dt_quant_num * self.touch_quantization(is_touch)
+        token += self.label_quant_num * self.dow_quant_num * self.dt_quant_num * self.touch_quantization(is_touch)
+        token += self.dow_quant_num * self.dt_quant_num * self.label_quantization(label)
+        token += self.dt_quant_num * self.dow_quantization(day_of_week)
+        token += self.dt_quantization(arrival_time)
+
+        # 滞在時間なし＋BBOX
+        # token += self.x_center_num * self.y_center_num * self.label_quant_num * self.dow_quant_num * self.dt_quant_num * self.touch_quantization(is_touch)
+        # token += self.y_center_num * self.label_quant_num * self.dow_quant_num * self.dt_quant_num * self.x_coord_quantization(x_center)
+        # token += self.label_quant_num * self.dow_quant_num * self.dt_quant_num * self.y_coord_quantization(y_center)
         # token += self.dow_quant_num * self.dt_quant_num * self.label_quantization(label)
         # token += self.dt_quant_num * self.dow_quantization(day_of_week)
         # token += self.dt_quantization(arrival_time)
+
         return token
 
 

@@ -9,7 +9,7 @@ import torch.nn.functional as F
 import torch
 from libs.model import Thing2Vec
 import pandas as pd
-
+from adjustText import adjust_text
 import argparse
 
 
@@ -17,7 +17,7 @@ def dbscan_3d(normalized_embeddings, clusters):
     pca = PCA(n_components=3)
     reduced_data = pca.fit_transform(normalized_embeddings)
 
-    fig = plt.figure(figsize=(12, 8))
+    fig = plt.figure(figsize=(12, 5))
 
     unique_clusters = set(clusters)
     colors = plt.cm.jet(np.linspace(0, 1, len(unique_clusters)))
@@ -54,19 +54,29 @@ def dbscan_2d(normalized_embeddings, clusters):
 
     unique_clusters = set(clusters)
     for cls in unique_clusters:
-        # ノイズのラベル
-        if cls == -1:
+        if cls == -1: # ノイズ
             color = 'black'
         else:
             color = plt.cm.jet(cls / len(unique_clusters))
         plt.scatter(reduced_data[clusters == cls, 0], reduced_data[clusters == cls, 1], label=f"Cluster {cls}", color=color)
-        
-        # if cls == 1:
-        #     cluster_indices = np.where(clusters == cls)[0]
-        #     for idx in cluster_indices:
-        #         item_id = df.iloc[idx]['id']
-        #         item_label = df.iloc[idx]['label']
-        #         plt.text(reduced_data[idx, 0], reduced_data[idx, 1], f'({item_id}-{item_label})', fontsize=8)
+
+    csv_file = './data/thing_train_data/sorted_kishino.csv'
+    df = pd.read_csv(csv_file)
+    df["cluster"] = clusters
+    df.to_csv('dbscan_cluster.csv', index=False)
+    
+    labels = df['label']
+
+    texts = []
+    for i, label in enumerate(labels):
+        x, y = reduced_data[i, 0], reduced_data[i, 1]
+        texts.append(plt.text(x, y, (i, label), size=10))
+
+    adjust_text(
+        texts,
+        expand_text=(1.2, 1.2),
+        arrowprops=dict(arrowstyle='->', color='red')
+    )
 
     plt.title("DBSCAN Clustering")
     plt.xlabel("X1")
@@ -91,12 +101,7 @@ def dbscan_plot(num_items, embed_size, num_output_tokens, eps, model_path):
 
     dbscan = DBSCAN(eps, min_samples=5)
     clusters = dbscan.fit_predict(normalized_embeddings)
-    csv_file = './data/thing_train_data/sorted_kishino.csv'
-    df = pd.read_csv(csv_file)
-    df["cluster"] = clusters
-    df.to_csv('dbscan_cluster.csv', index=False)
-
-
+    
     dbscan_2d(normalized_embeddings, clusters)
     dbscan_3d(normalized_embeddings, clusters)
 

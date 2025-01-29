@@ -9,7 +9,7 @@ if __name__ == "__main__":
     parser.add_argument('--batch_size', type=int, help='Batchsize in training', default=4)
     parser.add_argument('--learning_rate', type=float, help='Leaning rate in training', default=0.01)
     parser.add_argument('--num_epochs', type=int, help='Number of epochs in training', default=200)
-    parser.add_argument('--save_epoch', type=int, help='How many epochs to save the model', default=10)
+    parser.add_argument('--save_epoch', type=int, help='How many epochs to save the model', default=20)
     parser.add_argument('--cuda', type=int, help='Cuda number to use', default=0) 
     parser.add_argument('--emb_dim', type=int, help='Cuda number to use', default=15)
     parser.add_argument('-i', '--num_items', type=int) # データ数
@@ -21,8 +21,9 @@ if __name__ == "__main__":
                     args.save_epoch, args.cuda, args.emb_dim)
     
     # num_tokens = 24*2*6*5*2*5*5
-    num_tokens = 24*2*6*5*2
-    # num_tokens = 24*2*6*2
+    # num_tokens = 24*2*6*5*2
+    num_tokens = 24*2*6*2
+    # num_tokens = 24*2*6*2*5*5
 
     dbscan_plot(args.num_items, args.emb_dim, num_tokens, args.eps, args.model)
     kmeans_plot(args.num_items, args.emb_dim, num_tokens, args.n_clusters, args.model)

@@ -1,15 +1,57 @@
+import datetime
 import numpy as np
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
-import torch.nn.functional as F
-import torch
-import torch.nn as nn
-from libs.model import Thing2Vec
 import pandas as pd
 from adjustText import adjust_text
 import argparse
 
+
+def label_quantization(label):
+    return label
+
+def dt_quantization(dt):
+    '''
+    dt: hhmm
+    時間帯：[
+        6~9時: 0, 朝
+        9~12時: 1, 昼前
+        12~15時: 2, 昼過ぎ
+        15~18時: 3, 夕方
+        18時~21時: 4, 夜
+        21~6時: 5, 深夜
+    ]
+    '''
+    dt = datetime.datetime.strptime(dt, "%Y-%m-%d %H:%M:%S")
+    hour = dt.hour
+    if hour>=6 and hour<9:
+        return 0
+    elif hour>=9 and hour<12:
+        return 1
+    elif hour>=12 and hour<15:
+        return 2
+    elif hour>=15 and hour<18:
+        return 3
+    elif hour>=18 and hour<21:
+        return 4
+    else:
+        return 5
+
+# 曜日
+def dow_quantization(dow):
+    if dow in ["Saturday", "Sunday"]:
+        return 1
+    else:
+        return 0
+
+# 触れたかどうか
+def touch_quantization(is_touch):
+    if is_touch:
+        return 1
+    else:
+        return 0
+    
 
 def kmeans_2d(normalized_embeddings, clusters):
     pca = PCA(n_components=2)
@@ -63,37 +105,9 @@ def kmeans_3d(normalized_embeddings, clusters):
     plt.close()
 
 
-def kmeans_plot(num_items, embed_size, num_output_tokens, n_clusters, model_path):
-
-    model = Thing2Vec(num_items, embed_size, num_output_tokens)
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = model.to(device)
-    model.load_model(model_path)
-    model.eval()
-
-    item_indices = torch.arange(num_items).to(device) 
-    with torch.no_grad():
-        embeddings = model.embedding(item_indices).cpu()
-
-    normalized_embeddings = F.normalize(embeddings, p=2, dim=0).numpy()
-
-    kmeans = KMeans(n_clusters=n_clusters, random_state=42)
-    clusters = kmeans.fit_predict(normalized_embeddings)
-
-    kmeans_2d(normalized_embeddings, clusters)
-    kmeans_3d(normalized_embeddings, clusters)
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--num_items', type=int)
-    parser.add_argument('--embed_size', type=int, default=10)
-    parser.add_argument('--n_clusters', type=int, default=5)
-    parser.add_argument('--model', type=str, default='./output/model/models/model200.pth')
-    args = parser.parse_args()
+kmeans = KMeans(n_clusters=n_clusters, random_state=42)
+clusters = kmeans.fit_predict(normalized_embeddings)
 
-    num_tokens = 24*2*6*5*2*5*5
-    epoch = 200
 
-    kmeans_plot(args.num_items, args.embed_size, num_tokens, args.n_clusters, args.model)
-    

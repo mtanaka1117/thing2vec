@@ -12,9 +12,10 @@ if __name__ == "__main__":
     parser.add_argument('--model', default='./output/model/models/model200.pth')
     args = parser.parse_args()
     
-    # num_tokens = 24*2*6*5*2*5*5
-    num_tokens = 24*2*6*5*2
-    # num_tokens = 24*2*6*2
+    # num_tokens = 24*2*6*5*2*5*5 #BBOX
+    # num_tokens = 24*2*6*5*2 
+    num_tokens = 24*2*6*2      #滞在時間なし
+    # num_tokens = 24*2*6*2*5*5   #滞在時間なし＋BBOX
 
     dbscan_plot(args.num_items, args.emb_dim, num_tokens, args.eps, args.model)
     kmeans_plot(args.num_items, args.emb_dim, num_tokens, args.n_clusters, args.model)
