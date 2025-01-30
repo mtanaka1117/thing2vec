@@ -1,11 +1,16 @@
 import datetime
-import numpy as np
-from sklearn.decomposition import PCA
+from sklearn.datasets import make_blobs
+from sklearn.cluster import DBSCAN
 from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
+import numpy as np
+
+from sklearn.decomposition import PCA
 import pandas as pd
 from adjustText import adjust_text
 import argparse
+
+from matplotlib.ticker import MaxNLocator
 
 
 def label_quantization(label):
@@ -51,63 +56,182 @@ def touch_quantization(is_touch):
         return 1
     else:
         return 0
-    
 
-def kmeans_2d(normalized_embeddings, clusters):
+
+def dbscan_3d(data, clusters):
+    pca = PCA(n_components=3)
+    reduced_data = pca.fit_transform(data)
+
+    fig = plt.figure(figsize=(15, 5))
+
+    unique_clusters = set(clusters)
+    # colors = plt.cm.jet(np.linspace(0, 1, len(unique_clusters)))
+    colors = ['blue', 'darkturquoise', 'green', 'limegreen', 'yellow', 'orange', 'red', 'brown', 'salmon']
+
+    elevations = [20, 50, 80]
+    azimuths = [30, 120, 210]
+
+    for i, (elev, azim) in enumerate(zip(elevations, azimuths)):
+        ax = fig.add_subplot(1, len(elevations), i + 1, projection='3d')
+        for label, color in zip(unique_clusters, colors):
+            if label == -1:  # ノイズの場合
+                color = 'black'
+            mask = clusters == label
+            ax.scatter(reduced_data[mask, 0], reduced_data[mask, 1], reduced_data[mask, 2], 
+                        color=color, label=f'Cluster {label}' if label != -1 else "Noise")
+
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel('Z')
+
+        ax.view_init(elev=elev, azim=azim)
+
+        ax.xaxis.set_major_locator(MaxNLocator(5))
+        ax.yaxis.set_major_locator(MaxNLocator(5))
+        ax.zaxis.set_major_locator(MaxNLocator(5))
+
+    plt.tight_layout()
+    plt.savefig('dbscan_direct_3d.jpg')
+    plt.close()
+
+
+def dbscan_2d(data, clusters):
     pca = PCA(n_components=2)
-    reduced_vectors = pca.fit_transform(normalized_embeddings)
+    reduced_data = pca.fit_transform(data)
 
-    plt.scatter(reduced_vectors[:, 0], reduced_vectors[:, 1], c=clusters, cmap='jet', marker='o')
+    plt.figure(figsize=(8, 5))
+    colors = ['blue', 'darkturquoise', 'green', 'limegreen', 'yellow', 'orange', 'red', 'brown', 'salmon']
+
+    unique_clusters = set(clusters)
+    for cls, color in zip(unique_clusters, colors):
+        if cls == -1: # ノイズ
+            color = 'black'
+        
+        plt.scatter(reduced_data[clusters == cls, 0], reduced_data[clusters == cls, 1], label=f"Cluster {cls}", color=color)
+
+    csv_file = './data/thing_train_data/sorted_kishino.csv'
+    df = pd.read_csv(csv_file)
+    df["cluster"] = clusters
+    df.to_csv('dbscan_direct_cluster.csv', index=False)
+    
+    labels = df['label']
+
+    texts = []
+    for i, label in enumerate(labels):
+        x, y = reduced_data[i, 0], reduced_data[i, 1]
+        texts.append(plt.text(x, y, label, size=10))
+
+    adjust_text(
+        texts,
+        expand_text=(5, 5),
+        arrowprops=dict(arrowstyle='->', color='red')
+    )
+
+    plt.xlabel("X")
+    plt.ylabel("Y")
+    plt.legend(loc="upper left", bbox_to_anchor=(1,1))
+    plt.tight_layout()
+    plt.savefig('dbscan_direct_2d.jpg')
+    plt.close()
+
+
+
+def kmeans_2d(data, clusters):
+    pca = PCA(n_components=2)
+    reduced_vectors = pca.fit_transform(data)
+
+    plt.figure(figsize=(8, 5))
+    # plt.scatter(reduced_vectors[:, 0], reduced_vectors[:, 1], c=clusters, cmap='jet', marker='o')
+    
+    unique_clusters = set(clusters)
+    colors = plt.cm.jet(np.linspace(0, 1, len(unique_clusters)))
+    # colors = ['blue', 'darkturquoise', 'green', 'limegreen', 'yellow', 'orange', 'red', 'brown', 'salmon']
+    for cls, color in zip(unique_clusters, colors):
+        plt.scatter(reduced_vectors[clusters == cls, 0], reduced_vectors[clusters == cls, 1], label=f"Cluster {cls}", color=color)
 
     csv_file = './data/thing_train_data/sorted_kishino.csv'
     df = pd.read_csv(csv_file)
     df['Cluster'] = clusters
-    df.to_csv('kmeans_cluster.csv', index=False)
+    df.to_csv('kmeans_direct_cluster.csv', index=False)
 
     labels = df['label']
 
     texts = []
     for i, label in enumerate(labels):
         x, y = reduced_vectors[i, 0], reduced_vectors[i, 1]
-        texts.append(plt.text(x, y, (i, label), size=10))
+        texts.append(plt.text(x, y, label, size=10))
 
     adjust_text(
         texts,
-        expand_text=(1.2, 1.2),
+        expand_text=(5, 5),
         arrowprops=dict(arrowstyle='->', color='red')
     )
 
-    plt.savefig('kmeans_2d.jpg')
+    plt.legend(loc="upper left", bbox_to_anchor=(1,1))
+    plt.tight_layout()
+    plt.savefig('kmeans_direct_2d.jpg')
     plt.close()
 
 
-def kmeans_3d(normalized_embeddings, clusters):
+def kmeans_3d(data, clusters):
     pca = PCA(n_components=3)
-    data_3d = pca.fit_transform(normalized_embeddings)
+    data_3d = pca.fit_transform(data)
 
-    fig = plt.figure(figsize=(12, 5))
+    fig = plt.figure(figsize=(15, 5))
     elevations = [20, 50, 80]
     azimuths = [30, 120, 210]
 
+    colors = ['blue', 'darkturquoise', 'green', 'limegreen', 'yellow', 'orange', 'red', 'brown', 'salmon']
+    # unique_clusters = set(clusters)
+
     for i, (elev, azim) in enumerate(zip(elevations, azimuths)):
         ax = fig.add_subplot(1, len(elevations), i + 1, projection='3d')
-        ax.scatter(data_3d[:, 0], data_3d[:, 1], data_3d[:, 2], c=clusters, cmap='jet', marker='o')
+    #     ax.scatter(data_3d[:, 0], data_3d[:, 1], data_3d[:, 2], c=clusters, cmap='jet', marker='o')
 
-        ax.set_xlabel('PC1')
-        ax.set_ylabel('PC2')
-        ax.set_zlabel('PC3')
+        unique_clusters = set(clusters)
+        for label, color in zip(unique_clusters, colors):
+            mask = clusters == label
+            ax.scatter(data_3d[mask, 0], data_3d[mask, 1], data_3d[mask, 2], color=color, label=f'Cluster {label}')
+
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel('Z')
 
         ax.view_init(elev=elev, azim=azim)
-        ax.set_title(f"View: elev={elev}, azim={azim}")
+
+        ax.xaxis.set_major_locator(MaxNLocator(5))
+        ax.yaxis.set_major_locator(MaxNLocator(5))
+        ax.zaxis.set_major_locator(MaxNLocator(5))
         
     plt.tight_layout()
-    plt.savefig('kmeans_3d.jpg')
+    plt.savefig('kmeans_direct_3d.jpg')
     plt.close()
 
 
+csv_file = './data/thing_train_data/sorted_kishino.csv'
+df = pd.read_csv(csv_file)
 
+eps = 0.2
+n_clusters = 8
+
+data = []
+for id, label, arrival_time, dow, is_touch in zip(df["id"], df["label"], df["arrival_time"], df["day_of_week"], df["is_touch"]):
+    label = label_quantization(label)
+    arrival_time = dt_quantization(arrival_time)
+    dow = dow_quantization(dow)
+    is_touch = touch_quantization(is_touch)
+
+    data.append([label, arrival_time, dow, is_touch])
+
+data = np.array(data)
+dbscan = DBSCAN(eps, min_samples=4)
+clusters = dbscan.fit_predict(data)
+
+dbscan_2d(data, clusters)
+dbscan_3d(data, clusters)
 
 kmeans = KMeans(n_clusters=n_clusters, random_state=42)
-clusters = kmeans.fit_predict(normalized_embeddings)
+clusters = kmeans.fit_predict(data)
 
-
+kmeans_2d(data, clusters)
+kmeans_3d(data, clusters)

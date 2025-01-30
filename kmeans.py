@@ -20,13 +20,10 @@ def kmeans_2d(normalized_embeddings, clusters):
     # plt.scatter(reduced_vectors[:, 0], reduced_vectors[:, 1], c=clusters, cmap='jet', marker='o')
     
     unique_clusters = set(clusters)
-    for cls in unique_clusters:
-        plt.scatter(reduced_vectors[clusters == cls, 0], reduced_vectors[clusters == cls, 1], label=f"Cluster {cls}", cmap='jet')
-
+    colors = plt.cm.jet(np.linspace(0, 1, len(unique_clusters)))
     # colors = ['blue', 'darkturquoise', 'green', 'limegreen', 'yellow', 'orange', 'red', 'brown', 'salmon']
-    # unique_clusters = set(clusters)
-    # for cls, color in zip(unique_clusters, colors):
-    #     plt.scatter(reduced_vectors[clusters == cls, 0], reduced_vectors[clusters == cls, 1], label=f"Cluster {cls}", color=color)
+    for cls, color in zip(unique_clusters, colors):
+        plt.scatter(reduced_vectors[clusters == cls, 0], reduced_vectors[clusters == cls, 1], label=f"Cluster {cls}", color=color)
 
     csv_file = './data/thing_train_data/sorted_kishino.csv'
     df = pd.read_csv(csv_file)
