@@ -117,9 +117,18 @@ def dbscan_plot(num_items, embed_size, num_output_tokens, eps, model_path):
     dbscan = DBSCAN(eps, min_samples=4)
     clusters = dbscan.fit_predict(normalized_embeddings)
     unique_clusters = set(clusters)
+    centroids = []
+
+    for label in unique_clusters:
+        if label == -1:
+            continue
+        mask = clusters == label
+        cluster_center = np.mean(normalized_embeddings[mask], axis=0)
+        centroids.append([label, *cluster_center])
+
     dbscan_centers = np.array([normalized_embeddings[clusters == label].mean(axis=0) for label in unique_clusters if label != -1])
 
-    df_center = pd.DataFrame(dbscan_centers)
+    df_center = pd.DataFrame(centroids)
     df_center.to_csv('dbscan_center.csv', index=False)
     
     dbscan_2d(normalized_embeddings, clusters)
