@@ -14,49 +14,16 @@ import argparse
 
 from matplotlib.ticker import MaxNLocator
 
-def dbscan_3d(normalized_embeddings, clusters):
-    pca = PCA(n_components=3)
-    reduced_data = pca.fit_transform(normalized_embeddings)
-
-    fig = plt.figure(figsize=(15, 5))
-
-    unique_clusters = set(clusters)
-    # colors = plt.cm.jet(np.linspace(0, 1, len(unique_clusters)))
-    colors = ['blue', 'darkturquoise', 'green', 'limegreen', 'yellow', 'orange', 'red', 'brown', 'salmon']
-
-    elevations = [20, 50, 80]
-    azimuths = [30, 120, 210]
-
-    for i, (elev, azim) in enumerate(zip(elevations, azimuths)):
-        ax = fig.add_subplot(1, len(elevations), i + 1, projection='3d')
-        for label, color in zip(unique_clusters, colors):
-            if label == -1:  # ノイズの場合
-                color = 'black'
-            mask = clusters == label
-            ax.scatter(reduced_data[mask, 0], reduced_data[mask, 1], reduced_data[mask, 2], 
-                        color=color, label=f'Cluster {label}' if label != -1 else "Noise")
-
-        ax.set_xlabel('X')
-        ax.set_ylabel('Y')
-        ax.set_zlabel('Z')
-
-        ax.view_init(elev=elev, azim=azim)
-
-        ax.xaxis.set_major_locator(MaxNLocator(5))
-        ax.yaxis.set_major_locator(MaxNLocator(5))
-        ax.zaxis.set_major_locator(MaxNLocator(5))
-
-    plt.tight_layout()
-    plt.savefig('dbscan_3d.jpg')
-    plt.close()
-
 
 def dbscan_2d(normalized_embeddings, clusters):
     pca = PCA(n_components=2)
     reduced_data = pca.fit_transform(normalized_embeddings)
 
     plt.figure(figsize=(8, 5))
-    colors = ['blue', 'darkturquoise', 'green', 'limegreen', 'yellow', 'orange', 'red', 'brown', 'salmon']
+    unique_clusters = set(clusters)
+    # colors = plt.cm.jet(np.linspace(0, 1, len(unique_clusters)))
+    colors = ['palevioletred', 'darkmagenta', 'darkslateblue', 'blue', 'steelblue', 'darkturquoise', 'mediumseagreen', 'green', 'limegreen', 'yellow',
+              'goldenrod', 'orange', 'red', 'brown', 'salmon', 'darkred', 'rosybrown']
 
     unique_clusters = set(clusters)
     for cls, color in zip(unique_clusters, colors):
@@ -87,7 +54,50 @@ def dbscan_2d(normalized_embeddings, clusters):
     plt.ylabel("Y")
     plt.legend(loc="upper left", bbox_to_anchor=(1,1))
     plt.tight_layout()
-    plt.savefig('dbscan_2d.jpg')
+    plt.savefig('./img/dbscan_2d.jpg')
+    plt.close()
+
+
+def dbscan_3d(normalized_embeddings, clusters, dbscan_centers):
+    pca = PCA(n_components=3)
+    reduced_data = pca.fit_transform(normalized_embeddings)
+
+    fig = plt.figure(figsize=(15, 5))
+
+    unique_clusters = set(clusters)
+    # colors = plt.cm.jet(np.linspace(0, 1, len(unique_clusters)))
+    colors = ['palevioletred', 'darkmagenta', 'darkslateblue', 'blue', 'darkturquoise', 'mediumseagreen', 'green', 'limegreen', 'yellow', 
+              'goldenrod', 'orange', 'red', 'brown', 'salmon', 'darkred', 'rosybrown']
+
+    elevations = [20, 50, 80]
+    azimuths = [30, 120, 210]
+
+    for i, (elev, azim) in enumerate(zip(elevations, azimuths)):
+        ax = fig.add_subplot(1, len(elevations), i + 1, projection='3d')
+        for label, color in zip(unique_clusters, colors):
+            if label == -1:  # ノイズの場合
+                color = 'black'
+            mask = clusters == label
+            ax.scatter(reduced_data[mask, 0], reduced_data[mask, 1], reduced_data[mask, 2], 
+                        color=color, label=f'Cluster {label}' if label != -1 else "Noise")
+        
+        if len(dbscan_centers) > 0:
+            reduced_centers = pca.transform(dbscan_centers)
+            ax.scatter(reduced_centers[:,0], reduced_centers[:,1], reduced_centers[:,2],
+                       c='red', marker='x', s=20, label='Centroids')
+
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel('Z')
+
+        ax.view_init(elev=elev, azim=azim)
+
+        ax.xaxis.set_major_locator(MaxNLocator(5))
+        ax.yaxis.set_major_locator(MaxNLocator(5))
+        ax.zaxis.set_major_locator(MaxNLocator(5))
+
+    plt.tight_layout()
+    plt.savefig('./img/dbscan_3d.jpg')
     plt.close()
 
 
@@ -99,16 +109,21 @@ def dbscan_plot(num_items, embed_size, num_output_tokens, eps, model_path):
     model.load_model(model_path)
     model.eval()
 
-    item_indices = torch.arange(num_items).to(device) 
+    item_indices = torch.arange(num_items).to(device)
     with torch.no_grad():
         embeddings = model.embedding(item_indices).cpu()
     normalized_embeddings = F.normalize(embeddings, p=2, dim=0).numpy()
 
     dbscan = DBSCAN(eps, min_samples=4)
     clusters = dbscan.fit_predict(normalized_embeddings)
+    unique_clusters = set(clusters)
+    dbscan_centers = np.array([normalized_embeddings[clusters == label].mean(axis=0) for label in unique_clusters if label != -1])
+
+    df_center = pd.DataFrame(dbscan_centers)
+    df_center.to_csv('dbscan_center.csv', index=False)
     
     dbscan_2d(normalized_embeddings, clusters)
-    dbscan_3d(normalized_embeddings, clusters)
+    dbscan_3d(normalized_embeddings, clusters, dbscan_centers)
 
 
 if __name__ == '__main__':
@@ -120,6 +135,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # num_tokens = 24*2*6*5*2*5*5
-    num_tokens = 24*2*6*5*2
+    # num_tokens = 24*2*6*5*2
+    num_tokens = 24*2*6*2
 
     dbscan_plot(args.num_items, args.embed_size, num_tokens, args.eps, args.model)

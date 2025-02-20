@@ -59,5 +59,5 @@ plt.legend()
 plt.grid()
 
 # 結果をPNGとして保存
-plt.savefig("xmeans_clustering_result.png", dpi=300, bbox_inches='tight')
+plt.savefig("../img/xmeans_clustering_result.png", dpi=300, bbox_inches='tight')
 plt.close()  # 表示せずに保存して終了

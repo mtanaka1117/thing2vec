@@ -11,7 +11,7 @@ if __name__ == "__main__":
     parser.add_argument('--num_epochs', type=int, help='Number of epochs in training', default=200)
     parser.add_argument('--save_epoch', type=int, help='How many epochs to save the model', default=20)
     parser.add_argument('--cuda', type=int, help='Cuda number to use', default=0) 
-    parser.add_argument('--emb_dim', type=int, help='Cuda number to use', default=15)
+    parser.add_argument('--emb_dim', type=int, help='Embedding dimensions', default=8)
     parser.add_argument('-i', '--num_items', type=int) # データ数
     parser.add_argument('--eps', type=float, default=0.25)
     parser.add_argument('--n_clusters', type=int, default=5)

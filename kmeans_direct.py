@@ -166,7 +166,9 @@ def kmeans_2d(data, clusters):
         expand_text=(5, 5),
         arrowprops=dict(arrowstyle='->', color='red')
     )
-
+    
+    plt.xlabel("X")
+    plt.ylabel("Y")
     plt.legend(loc="upper left", bbox_to_anchor=(1,1))
     plt.tight_layout()
     plt.savefig('kmeans_direct_2d.jpg')

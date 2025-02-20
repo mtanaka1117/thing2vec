@@ -11,7 +11,6 @@ from adjustText import adjust_text
 import argparse
 from matplotlib.ticker import MaxNLocator
 
-
 def kmeans_2d(normalized_embeddings, clusters):
     pca = PCA(n_components=2)
     reduced_vectors = pca.fit_transform(normalized_embeddings)
@@ -21,7 +20,8 @@ def kmeans_2d(normalized_embeddings, clusters):
     
     unique_clusters = set(clusters)
     colors = plt.cm.jet(np.linspace(0, 1, len(unique_clusters)))
-    # colors = ['blue', 'darkturquoise', 'green', 'limegreen', 'yellow', 'orange', 'red', 'brown', 'salmon']
+    colors = ['palevioletred', 'darkmagenta', 'darkslateblue', 'blue', 'darkturquoise', 'mediumseagreen', 'green', 'limegreen', 'yellow', 
+              'goldenrod', 'orange', 'red', 'brown', 'salmon', 'darkred', 'rosybrown']
     for cls, color in zip(unique_clusters, colors):
         plt.scatter(reduced_vectors[clusters == cls, 0], reduced_vectors[clusters == cls, 1], label=f"Cluster {cls}", color=color)
 
@@ -43,30 +43,37 @@ def kmeans_2d(normalized_embeddings, clusters):
         arrowprops=dict(arrowstyle='->', color='red')
     )
 
+    plt.xlabel("X")
+    plt.ylabel("Y")
     plt.legend(loc="upper left", bbox_to_anchor=(1,1))
     plt.tight_layout()
-    plt.savefig('kmeans_2d.jpg')
+    plt.savefig('./img/kmeans_2d.jpg')
     plt.close()
 
 
-def kmeans_3d(normalized_embeddings, clusters):
+def kmeans_3d(normalized_embeddings, clusters, kmeans_centers):
     pca = PCA(n_components=3)
     data_3d = pca.fit_transform(normalized_embeddings)
+    centers_3d = pca.transform(kmeans_centers)
 
     fig = plt.figure(figsize=(15, 5))
     elevations = [20, 50, 80]
     azimuths = [30, 120, 210]
 
-    # colors = ['blue', 'darkturquoise', 'green', 'limegreen', 'yellow', 'orange', 'red', 'brown', 'salmon']
+    colors = ['palevioletred', 'darkmagenta', 'darkslateblue', 'blue', 'darkturquoise', 'mediumseagreen', 'green', 'limegreen', 'yellow', 
+              'goldenrod', 'orange', 'red', 'brown', 'salmon', 'darkred', 'rosybrown']
     unique_clusters = set(clusters)
 
     for i, (elev, azim) in enumerate(zip(elevations, azimuths)):
         ax = fig.add_subplot(1, len(elevations), i + 1, projection='3d')
-        ax.scatter(data_3d[:, 0], data_3d[:, 1], data_3d[:, 2], c=clusters, cmap='jet', marker='o')
+        # ax.scatter(data_3d[:, 0], data_3d[:, 1], data_3d[:, 2], c=clusters, cmap='jet', marker='o')
 
-        # for label, color in zip(unique_clusters, colors):
-        #     mask = clusters == label
-        #     ax.scatter(data_3d[mask, 0], data_3d[mask, 1], data_3d[mask, 2], color=color, label=f'Cluster {label}')
+        for label, color in zip(unique_clusters, colors):
+            mask = clusters == label
+            ax.scatter(data_3d[mask, 0], data_3d[mask, 1], data_3d[mask, 2], color=color, label=f'Cluster {label}')
+        
+        ax.scatter(centers_3d[:,0], centers_3d[:,1], centers_3d[:,2],
+                   color='red', marker='x', s=20, label='Centroids')
 
         ax.set_xlabel('X')
         ax.set_ylabel('Y')
@@ -79,7 +86,7 @@ def kmeans_3d(normalized_embeddings, clusters):
         ax.zaxis.set_major_locator(MaxNLocator(5))
         
     plt.tight_layout()
-    plt.savefig('kmeans_3d.jpg')
+    plt.savefig('./img/kmeans_3d.jpg')
     plt.close()
 
 
@@ -99,9 +106,13 @@ def kmeans_plot(num_items, embed_size, num_output_tokens, n_clusters, model_path
 
     kmeans = KMeans(n_clusters=n_clusters, random_state=42)
     clusters = kmeans.fit_predict(normalized_embeddings)
+    kmeans_centers = kmeans.cluster_centers_
+
+    df_center = pd.DataFrame(kmeans_centers)
+    df_center.to_csv('kmeans_center.csv', index=False)
 
     kmeans_2d(normalized_embeddings, clusters)
-    kmeans_3d(normalized_embeddings, clusters)
+    kmeans_3d(normalized_embeddings, clusters, kmeans_centers)
 
 
 if __name__ == '__main__':
@@ -112,7 +123,8 @@ if __name__ == '__main__':
     parser.add_argument('--model', type=str, default='./output/model/models/model200.pth')
     args = parser.parse_args()
 
-    num_tokens = 24*2*6*5*2*5*5
+    # num_tokens = 24*2*6*5*2*5*5
+    num_tokens = 24*2*6*2
     epoch = 200
 
     kmeans_plot(args.num_items, args.embed_size, num_tokens, args.n_clusters, args.model)
