@@ -32,17 +32,11 @@ def dbscan_2d(normalized_embeddings, clusters):
         else: color = colormap[i]
         marker = markers[i % len(markers)]
         plt.scatter(reduced_data[clusters == cls, 0], reduced_data[clusters == cls, 1], label=f"Cluster {cls}", color=color, marker=marker)
-
-    csv_file = './data/thing_train_data/sorted_kishino.csv'
-    df = pd.read_csv(csv_file)
-    df["cluster"] = clusters
-    df.to_csv('dbscan_cluster.csv', index=False)
     
-    labels = df['label']
     texts = []
-    for i, label in enumerate(labels):
+    for i in range(23):
         x, y = reduced_data[i, 0], reduced_data[i, 1]
-        texts.append(plt.text(x, y, label, size=10, alpha=0.9))
+        texts.append(plt.text(x, y, i, size=10, alpha=0.9))
 
     adjust_text(
         texts,
@@ -56,14 +50,11 @@ def dbscan_2d(normalized_embeddings, clusters):
     plt.ylabel("Y")
     plt.legend(loc="upper left", bbox_to_anchor=(1,1))
     plt.tight_layout()
-    plt.savefig('./img/dbscan_2d.jpg')
+    plt.savefig('./img/dbscan_2d_dev.jpg')
     plt.close()
 
 
-def dbscan_3d(normalized_embeddings, clusters, dbscan_centers):
-    pca = PCA(n_components=3)
-    reduced_data = pca.fit_transform(normalized_embeddings)
-
+def dbscan_3d(normalized_embeddings, clusters):
     fig = plt.figure(figsize=(10, 5))
 
     unique_clusters = set(clusters)
@@ -81,13 +72,8 @@ def dbscan_3d(normalized_embeddings, clusters, dbscan_centers):
             else: color = colormap[i]
             marker = markers[i % len(markers)]
             mask = clusters == label
-            ax.scatter(reduced_data[mask, 0], reduced_data[mask, 1], reduced_data[mask, 2], 
+            ax.scatter(normalized_embeddings[mask, 0], normalized_embeddings[mask, 1], normalized_embeddings[mask, 2], 
                         color=color, label=f'Cluster {label}' if label != -1 else "Noise", marker=marker)
-        
-        # if len(dbscan_centers) > 0:
-        #     reduced_centers = pca.transform(dbscan_centers)
-            # ax.scatter(reduced_centers[:,0], reduced_centers[:,1], reduced_centers[:,2],
-            #             c='red', marker='x', s=20, label='Centroids')
 
         ax.set_xlabel('X')
         ax.set_ylabel('Y')
@@ -100,7 +86,7 @@ def dbscan_3d(normalized_embeddings, clusters, dbscan_centers):
         ax.zaxis.set_major_locator(MaxNLocator(5))
 
     plt.tight_layout()
-    plt.savefig('./img/dbscan_3d.jpg')
+    plt.savefig('./img/dbscan_3d_dev.jpg')
     plt.close()
 
 
@@ -119,35 +105,28 @@ def dbscan_plot(num_items, embed_size, num_output_tokens, eps, model_path):
 
     dbscan = DBSCAN(eps, min_samples=4)
     clusters = dbscan.fit_predict(normalized_embeddings)
-    unique_clusters = set(clusters)
-    centroids = []
-
-    for label in unique_clusters:
-        if label == -1:
-            continue
-        mask = clusters == label
-        cluster_center = np.mean(normalized_embeddings[mask], axis=0)
-        centroids.append([label, *cluster_center])
-
-    dbscan_centers = np.array([normalized_embeddings[clusters == label].mean(axis=0) for label in unique_clusters if label != -1])
-
-    df_center = pd.DataFrame(centroids)
-    df_center.to_csv('dbscan_center.csv', index=False)
+    
+    # df = pd.DataFrame({
+    #     "X": normalized_embeddings[:, 0],
+    #     "Y": normalized_embeddings[:, 1], 
+    #     "Cluster": clusters,  # クラスタ番号
+    #     "Label": labels  # 各データポイントのラベル（オプション）
+    # })
     
     dbscan_2d(normalized_embeddings, clusters)
-    dbscan_3d(normalized_embeddings, clusters, dbscan_centers)
+    dbscan_3d(normalized_embeddings, clusters)
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--num_items', type=int)
-    parser.add_argument('--embed_size', type=int, default=10)
+    parser = argparse.ArgumentParser(description='Description of your program')
+    parser.add_argument('--emb_dim', type=int, help='Cuda number to use', default=3)
+    parser.add_argument('-i', '--num_items', type=int, default=23)
     parser.add_argument('--eps', type=float, default=0.1)
-    parser.add_argument('--model', type=str, default='./output/model/models/model200.pth')
+    parser.add_argument('--epoch', type=int, default=200)
+    parser.add_argument('--model', default='./output/model_dev/models/model200.pth')
     args = parser.parse_args()
+    
+    num_tokens = 2*6*2
 
-    # num_tokens = 24*2*6*5*2*5*5
-    # num_tokens = 24*2*6*5*2
-    num_tokens = 24*2*6*2
+    dbscan_plot(args.num_items, args.emb_dim, num_tokens, args.eps, args.model)
 
-    dbscan_plot(args.num_items, args.embed_size, num_tokens, args.eps, args.model)

@@ -62,23 +62,26 @@ def dbscan_3d(data, clusters):
     pca = PCA(n_components=3)
     reduced_data = pca.fit_transform(data)
 
-    fig = plt.figure(figsize=(15, 5))
+    fig = plt.figure(figsize=(10, 5))
 
     unique_clusters = set(clusters)
-    # colors = plt.cm.jet(np.linspace(0, 1, len(unique_clusters)))
-    colors = ['blue', 'darkturquoise', 'green', 'limegreen', 'yellow', 'orange', 'red', 'brown', 'salmon']
-
-    elevations = [20, 50, 80]
-    azimuths = [30, 120, 210]
+    markers = ['o', 's', 'D', '^', '*', '+', 'x']
+    colormap = ['palevioletred', 'darkmagenta', 'darkslateblue', 'blue', 'steelblue', 'darkturquoise', 'mediumseagreen', 'green', 'limegreen', 'yellow',
+            'goldenrod', 'orange', 'red', 'brown', 'salmon', 'darkred', 'rosybrown']
+    
+    elevations = [20, 80]
+    azimuths = [30, 210]
 
     for i, (elev, azim) in enumerate(zip(elevations, azimuths)):
         ax = fig.add_subplot(1, len(elevations), i + 1, projection='3d')
-        for label, color in zip(unique_clusters, colors):
+        for i, label in enumerate(unique_clusters):
             if label == -1:  # ノイズの場合
                 color = 'black'
+            else: color = colormap[i]
+            marker = markers[i % len(markers)]
             mask = clusters == label
             ax.scatter(reduced_data[mask, 0], reduced_data[mask, 1], reduced_data[mask, 2], 
-                        color=color, label=f'Cluster {label}' if label != -1 else "Noise")
+                        color=color, label=f'Cluster {label}' if label != -1 else "Noise", marker=marker)
 
         ax.set_xlabel('X')
         ax.set_ylabel('Y')
@@ -91,7 +94,7 @@ def dbscan_3d(data, clusters):
         ax.zaxis.set_major_locator(MaxNLocator(5))
 
     plt.tight_layout()
-    plt.savefig('dbscan_direct_3d.jpg')
+    plt.savefig('./img/dbscan_direct_3d.jpg')
     plt.close()
 
 
@@ -100,14 +103,17 @@ def dbscan_2d(data, clusters):
     reduced_data = pca.fit_transform(data)
 
     plt.figure(figsize=(8, 5))
-    colors = ['blue', 'darkturquoise', 'green', 'limegreen', 'yellow', 'orange', 'red', 'brown', 'salmon']
-
     unique_clusters = set(clusters)
-    for cls, color in zip(unique_clusters, colors):
+    markers = ['o', 's', 'D', '^', '*', '+', 'x']
+    colormap = ['palevioletred', 'darkmagenta', 'darkslateblue', 'blue', 'steelblue', 'darkturquoise', 'mediumseagreen', 'green', 'limegreen', 'yellow',
+            'goldenrod', 'orange', 'red', 'brown', 'salmon', 'darkred', 'rosybrown']
+    
+    for i, cls in enumerate(unique_clusters):
         if cls == -1: # ノイズ
             color = 'black'
-        
-        plt.scatter(reduced_data[clusters == cls, 0], reduced_data[clusters == cls, 1], label=f"Cluster {cls}", color=color)
+        else: color = colormap[i]
+        marker = markers[i % len(markers)]
+        plt.scatter(reduced_data[clusters == cls, 0], reduced_data[clusters == cls, 1], label=f"Cluster {cls}", color=color, marker=marker)
 
     csv_file = './data/thing_train_data/sorted_kishino.csv'
     df = pd.read_csv(csv_file)
@@ -118,20 +124,26 @@ def dbscan_2d(data, clusters):
 
     texts = []
     for i, label in enumerate(labels):
-        x, y = reduced_data[i, 0], reduced_data[i, 1]
-        texts.append(plt.text(x, y, label, size=10))
+        if label != 5 and label != 8 and label != 9:
+            x, y = reduced_data[i, 0], reduced_data[i, 1]
+            texts.append(plt.text(x, y, label, size=10))
+        elif i % 2 == 0 and (label == 5 or label == 8 or label == 9):
+            x, y = reduced_data[i, 0], reduced_data[i, 1]
+            texts.append(plt.text(x, y, label, size=10))
 
     adjust_text(
         texts,
-        expand_text=(5, 5),
-        arrowprops=dict(arrowstyle='->', color='red')
+        expand_text=(15, 15),
+        force_text=(0.5, 0.5),
+        force_points=(0.3, 0.3),
+        arrowprops=dict(arrowstyle='->', color='red', lw=0.5)
     )
 
     plt.xlabel("X")
     plt.ylabel("Y")
     plt.legend(loc="upper left", bbox_to_anchor=(1,1))
     plt.tight_layout()
-    plt.savefig('dbscan_direct_2d.jpg')
+    plt.savefig('./img/dbscan_direct_2d.jpg')
     plt.close()
 
 
@@ -144,10 +156,14 @@ def kmeans_2d(data, clusters):
     # plt.scatter(reduced_vectors[:, 0], reduced_vectors[:, 1], c=clusters, cmap='jet', marker='o')
     
     unique_clusters = set(clusters)
-    colors = plt.cm.jet(np.linspace(0, 1, len(unique_clusters)))
-    # colors = ['blue', 'darkturquoise', 'green', 'limegreen', 'yellow', 'orange', 'red', 'brown', 'salmon']
-    for cls, color in zip(unique_clusters, colors):
-        plt.scatter(reduced_vectors[clusters == cls, 0], reduced_vectors[clusters == cls, 1], label=f"Cluster {cls}", color=color)
+    markers = ['o', 's', 'D', '^', '*', '+', 'x']
+    colormap = ['palevioletred', 'darkmagenta', 'darkslateblue', 'blue', 'steelblue', 'darkturquoise', 'mediumseagreen', 'green', 'limegreen', 'yellow',
+            'goldenrod', 'orange', 'red', 'brown', 'salmon', 'darkred', 'rosybrown']
+    
+    for i, cls in enumerate(unique_clusters):
+        color = colormap[i]
+        marker = markers[i % len(markers)]
+        plt.scatter(reduced_vectors[clusters == cls, 0], reduced_vectors[clusters == cls, 1], label=f"Cluster {cls}", color=color, marker=marker)
 
     csv_file = './data/thing_train_data/sorted_kishino.csv'
     df = pd.read_csv(csv_file)
@@ -158,20 +174,24 @@ def kmeans_2d(data, clusters):
 
     texts = []
     for i, label in enumerate(labels):
-        x, y = reduced_vectors[i, 0], reduced_vectors[i, 1]
-        texts.append(plt.text(x, y, label, size=10))
+        if label != 5 and label != 8 and label != 9:
+            x, y = reduced_vectors[i, 0], reduced_vectors[i, 1]
+            texts.append(plt.text(x, y, label, size=10))
+        elif i % 2 == 0 and (label == 5 or label == 8 or label == 9):
+            x, y = reduced_vectors[i, 0], reduced_vectors[i, 1]
+            texts.append(plt.text(x, y, label, size=10))
 
     adjust_text(
         texts,
-        expand_text=(5, 5),
-        arrowprops=dict(arrowstyle='->', color='red')
+        expand_text=(5, 15),
+        arrowprops=dict(arrowstyle='->', color='red', lw=0.5)
     )
     
     plt.xlabel("X")
     plt.ylabel("Y")
     plt.legend(loc="upper left", bbox_to_anchor=(1,1))
     plt.tight_layout()
-    plt.savefig('kmeans_direct_2d.jpg')
+    plt.savefig('./img/kmeans_direct_2d.jpg')
     plt.close()
 
 
@@ -179,21 +199,25 @@ def kmeans_3d(data, clusters):
     pca = PCA(n_components=3)
     data_3d = pca.fit_transform(data)
 
-    fig = plt.figure(figsize=(15, 5))
-    elevations = [20, 50, 80]
-    azimuths = [30, 120, 210]
+    fig = plt.figure(figsize=(10, 5))
+    elevations = [20, 80]
+    azimuths = [30, 210]
 
-    colors = ['blue', 'darkturquoise', 'green', 'limegreen', 'yellow', 'orange', 'red', 'brown', 'salmon']
-    # unique_clusters = set(clusters)
+    unique_clusters = set(clusters)
+    markers = ['o', 's', 'D', '^', '*', '+', 'x']
+    colormap = ['palevioletred', 'darkmagenta', 'darkslateblue', 'blue', 'steelblue', 'darkturquoise', 'mediumseagreen', 'green', 'limegreen', 'yellow',
+            'goldenrod', 'orange', 'red', 'brown', 'salmon', 'darkred', 'rosybrown']
 
     for i, (elev, azim) in enumerate(zip(elevations, azimuths)):
         ax = fig.add_subplot(1, len(elevations), i + 1, projection='3d')
     #     ax.scatter(data_3d[:, 0], data_3d[:, 1], data_3d[:, 2], c=clusters, cmap='jet', marker='o')
 
         unique_clusters = set(clusters)
-        for label, color in zip(unique_clusters, colors):
+        for i, label in enumerate(unique_clusters):
+            color = colormap[i]
+            marker = markers[i % len(markers)]
             mask = clusters == label
-            ax.scatter(data_3d[mask, 0], data_3d[mask, 1], data_3d[mask, 2], color=color, label=f'Cluster {label}')
+            ax.scatter(data_3d[mask, 0], data_3d[mask, 1], data_3d[mask, 2], color=color, label=f'Cluster {label}', marker=marker)
 
         ax.set_xlabel('X')
         ax.set_ylabel('Y')
@@ -206,7 +230,7 @@ def kmeans_3d(data, clusters):
         ax.zaxis.set_major_locator(MaxNLocator(5))
         
     plt.tight_layout()
-    plt.savefig('kmeans_direct_3d.jpg')
+    plt.savefig('./img/kmeans_direct_3d.jpg')
     plt.close()
 
 
@@ -214,7 +238,7 @@ csv_file = './data/thing_train_data/sorted_kishino.csv'
 df = pd.read_csv(csv_file)
 
 eps = 0.2
-n_clusters = 8
+n_clusters = 17
 
 data = []
 for id, label, arrival_time, dow, is_touch in zip(df["id"], df["label"], df["arrival_time"], df["day_of_week"], df["is_touch"]):

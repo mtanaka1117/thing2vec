@@ -8,54 +8,17 @@ import torch.nn as nn
 from torch import optim
 
 class FeatureQuantization:
-    def __init__(self, label_quant_num=24, dow_quant_num=2, dt_quant_num=6, e_quant_num=5, 
-                touch_quant_num=2, x_center_num=5, y_center_num=5):
+    def __init__(self, dow_quant_num=2, dt_quant_num=6, touch_quant_num=2):
         super().__init__()
 
-        self.label_quant_num = label_quant_num
         self.dow_quant_num = dow_quant_num # day_of_week
-        # self.month_quant_num = month_quant_num
-        # self.date_quant_num = date_quant_num
         self.dt_quant_num = dt_quant_num # 時間帯
-        self.e_quant_num = e_quant_num # 滞在時間
-        self.x_center_num = x_center_num
-        self.y_center_num = y_center_num
-        # self.width = width_max
-        # self.height = height_max
         self.touch_quant_num = touch_quant_num
         
-        self.quant_num = label_quant_num*dow_quant_num*dt_quant_num*touch_quant_num
-        # self.quant_num = label_quant_num*dow_quant_num*dt_quant_num*e_quant_num*touch_quant_num
-        # self.quant_num = label_quant_num*dow_quant_num*dt_quant_num*e_quant_num*self.x_center_num*self.y_center_num*touch_quant_num
-        # self.quant_num = label_quant_num*dow_quant_num*dt_quant_num*self.x_center_num*self.y_center_num*touch_quant_num
-
+        self.quant_num = dow_quant_num*dt_quant_num*touch_quant_num
         self.dow_dic = {"Sunday": 0, "Monday": 1, "Tuesday": 2,
                         "Wednesday": 3, "Thursday": 4, "Friday": 5, "Saturday": 6}
         self.rev_dow_dic = {v: k for k, v in self.dow_dic.items()}
-        
-        # upper limits of elapsed time for each token
-        self.e_thresholds = [60, 120, 180, 240]
-
-
-    def label_quantization(self, label):
-        return label
-
-    # 滞在時間の量子化
-    def e_quantization(self, e):
-        e_token = 0
-        for e_token, thre in enumerate(self.e_thresholds):
-            if e <= thre:
-                return e_token
-        return self.e_quant_num - 1
-    
-    # 月日の量子化
-    # def month_quantization(self, date):
-    #     month = int(date.split("-")[0])
-    #     return month
-    
-    # def date_quantization(self, date):
-    #     date = int(date.split("-")[1])
-    #     return date
     
     
     # 時刻の量子化
@@ -105,96 +68,42 @@ class FeatureQuantization:
             return 0
         
 
-    def x_coord_quantization(self, x_center):
-        if x_center <= 213:
-            x = 0
-        elif x_center <= 426:
-            x = 1
-        elif x_center <= 639:
-            x = 2
-        elif x_center <= 852:
-            x = 3
-        else:
-            x = 4
-        return x
-
-    def y_coord_quantization(self, y_center):
-        if y_center <= 170:
-            y = 0
-        elif y_center <= 340:
-            y = 1
-        elif y_center <= 510:
-            y = 2
-        elif y_center <= 680:
-            y = 3
-        else:
-            y = 4
-        return y
-
-
     # 量子化
-    def quantization(self, label, day_of_week, arrival_time, elapsed_time, x_center, y_center, is_touch):
+    def quantization(self, day_of_week, arrival_time, is_touch):
         token = int(0)
-        
-        # BBOX
-        # token += self.x_center_num * self.y_center_num * self.label_quant_num * self.dow_quant_num * self.dt_quant_num * self.e_quant_num * self.touch_quantization(is_touch)
-        # token += self.y_center_num * self.label_quant_num * self.dow_quant_num * self.dt_quant_num * self.e_quant_num * self.x_coord_quantization(x_center)
-        # token += self.label_quant_num * self.dow_quant_num * self.dt_quant_num * self.e_quant_num * self.y_coord_quantization(y_center)
-
-        # token += self.label_quant_num * self.dow_quant_num * self.dt_quant_num * self.e_quant_num * self.touch_quantization(is_touch)
-        # token += self.dow_quant_num * self.dt_quant_num * self.e_quant_num * self.label_quantization(label)
-        # token += self.dt_quant_num * self.e_quant_num * self.dow_quantization(day_of_week)
-        # token += self.e_quant_num*self.dt_quantization(arrival_time)
-        # token += self.e_quantization(elapsed_time)
 
         # 滞在時間なし
-        token += self.label_quant_num * self.dow_quant_num * self.dt_quant_num * self.touch_quantization(is_touch)
-        token += self.dow_quant_num * self.dt_quant_num * self.label_quantization(label)
+        token += self.dow_quant_num * self.dt_quant_num * self.touch_quantization(is_touch)
         token += self.dt_quant_num * self.dow_quantization(day_of_week)
         token += self.dt_quantization(arrival_time)
-
-        # 滞在時間なし＋BBOX
-        # token += self.x_center_num * self.y_center_num * self.label_quant_num * self.dow_quant_num * self.dt_quant_num * self.touch_quantization(is_touch)
-        # token += self.y_center_num * self.label_quant_num * self.dow_quant_num * self.dt_quant_num * self.x_coord_quantization(x_center)
-        # token += self.label_quant_num * self.dow_quant_num * self.dt_quant_num * self.y_coord_quantization(y_center)
-        # token += self.dow_quant_num * self.dt_quant_num * self.label_quantization(label)
-        # token += self.dt_quant_num * self.dow_quantization(day_of_week)
-        # token += self.dt_quantization(arrival_time)
-
         return token
 
 
     def dequantization(self, token):
-        elapsed_token = token % self.e_quant_num
-        token //= self.e_quant_num
-
         date_time_token = token % self.dt_quant_num
         token //= self.dt_quant_num
         
         dow_token = token % self.dow_quant_num
         token //= self.dow_quant_num
         
-        label_token = token % self.label_quant_num
-        token //= self.label_quant_num
-        
         touch_token = token % self.touch_quant_num
         
-        return label_token, dow_token, date_time_token, elapsed_token, touch_token
+        return dow_token, date_time_token, touch_token
 
 
 class Dataset:
     def __init__(self, quantization=None):
         if quantization is None:
-            quantization = FeatureQuantization(label_quant_num=28, dow_quant_num=2, dt_quant_num=6, e_quant_num=4, touch_quant_num=2, x_center_num=5, y_center_num=5)
+            quantization = FeatureQuantization(dow_quant_num=2, dt_quant_num=6, touch_quant_num=2)
         self.quantization = quantization  # Object that handles the quantization process.
         self.num_tokens = self.quantization.quant_num  # Number of quantization tokens.
     
     
-    def gen_dataset(self, df, num_items=None):
+    def gen_dataset(self, df, num_items=23):
         self.dataset = []
-        for id, label, arrival_time, stay_time, dow, x_center, y_center, is_touch in zip(df["id"], df["label"], df["arrival_time"], df["stay_time"], df["day_of_week"], df["x_cent"], df["y_cent"], df["is_touch"]):
-            token = self.quantization.quantization(label, dow, arrival_time, stay_time, x_center, y_center, is_touch) 
-            self.dataset.append((int(id), token)) 
+        for id, label, arrival_time, dow, is_touch in zip(df["id"], df["label"], df["arrival_time"], df["day_of_week"], df["is_touch"]):
+            token = self.quantization.quantization(dow, arrival_time, is_touch) 
+            self.dataset.append((int(label), token)) 
         
         self.dataset = torch.tensor(self.dataset)  # Convert the dataset list to a tensor.
         
